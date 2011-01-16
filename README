@@ -1,0 +1,26 @@
+The Hilbert kernel library is intended to provide a core library for formal
+proof verification.
+
+At this point, the library is not yet finished (i.e., not even in alpha
+stage). You are encouraged to contribute! Just drop me a note on
+wikiproofs.org (user GrafZahl) or github.com (TheCount).
+
+Some starting points:
+
+* COPYING
+  contains the license under which this software is distributed.
+
+* BUILD
+  for instructions on how to build and install the software.
+
+* You may also want to check out the following places to get the hang of
+  formal proof verification:
+    - http://www.wikiproofs.org
+      A site dedicated to collaborative theorem proving with formal
+      verification.
+    - https://sites.google.com/a/ghilbert.org/ghilbert/
+      Raph Levien's Ghilbert, from which the hilbert kernel library was
+      inspired.
+    - http://us.metamath.org
+      Norman Megill's metamath site, with thousands of formally verified
+      proofs.

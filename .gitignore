@@ -23,5 +23,5 @@ tests/*
 !tests/Makefile.am
 !tests/*.c
 
-# Stage stamps
+# Timestamps
 stamp-*
