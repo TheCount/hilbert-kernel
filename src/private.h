@@ -28,6 +28,30 @@
 #include"threads/hthreads.h"
 
 /**
+ * Generic object type.
+ */
+struct Generic {
+	unsigned int type;
+};
+
+/**
+ * Kind.
+ */
+struct Kind {
+	unsigned int type;
+
+	// FIXME: add equivalence classes
+};
+
+/**
+ * Object.
+ */
+union Object {
+	struct Generic generic;
+	struct Kind kind;
+};
+
+/**
  * Private Hilbert module structure.
  */
 struct HilbertModule {
