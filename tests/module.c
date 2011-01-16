@@ -47,9 +47,14 @@ static void check_module(int type, int expectfailure) {
 		fprintf(stderr, "Unable to create module with type %d\n", type);
 		exit(EXIT_FAILURE);
 	}
-	// FIXME: Check module type with hilbert_module_gettype
-	if (module != NULL)
+	if (module != NULL) {
+		int mtype = hilbert_module_gettype(module);
+		if (type != mtype) {
+			fprintf(stderr, "Created module has wrong type: expected: %d, got: %d\n", type, mtype);
+			exit(EXIT_FAILURE);
+		}
 		hilbert_module_free(module);
+	}
 }
 
 int main(void) {

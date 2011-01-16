@@ -64,3 +64,10 @@ void hilbert_module_free(struct HilbertModule * module) {
 	mtx_destroy(&module->mutex);
 	free(module);
 }
+
+enum HilbertModuleType hilbert_module_gettype(struct HilbertModule * module) {
+	assert (module != NULL);
+
+	/* Locking the module is not necessary because type is constant during its lifetime */
+	return module->type;
+}
