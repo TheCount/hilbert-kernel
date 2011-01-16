@@ -124,3 +124,47 @@ lockerror:
 	return rc;
 }
 
+int hilbert_module_setancillary(struct HilbertModule * module, void * newdata, void ** olddata) {
+	assert (module != NULL);
+
+	int errcode;
+
+	if (mtx_lock(&module->mutex) != thrd_success) {
+		errcode = HILBERT_ERR_INTERNAL;
+		goto lockerror;
+	}
+
+	if (olddata != NULL)
+		*olddata = module->ancillary;
+	module->ancillary = newdata;
+
+	if (mtx_unlock(&module->mutex) != thrd_success) {
+		errcode = HILBERT_ERR_INTERNAL;
+		goto lockerror;
+	}
+
+	errcode = 0;
+lockerror:
+	return errcode;
+}
+
+int hilbert_module_getancillary(struct HilbertModule * module, void ** data) {
+	assert (module != NULL);
+	assert (data != NULL);
+
+	int errcode = 0; // no error
+
+	if (mtx_lock(&module->mutex) != thrd_success) {
+		errcode = HILBERT_ERR_INTERNAL;
+		goto lockerror;
+	}
+
+	*data = module->ancillary;
+
+	if (mtx_unlock(&module->mutex) != thrd_success)
+		errcode = HILBERT_ERR_INTERNAL;
+
+lockerror:
+	return errcode;
+}
+

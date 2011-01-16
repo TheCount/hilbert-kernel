@@ -20,8 +20,8 @@
 #     on wiki : http://www.wikiproofs.org/w/index.php?title=User_talk:GrafZahl
 #
 
-check_PROGRAMS = module immutable
+check_PROGRAMS = module immutable ancillary
 AM_CFLAGS = -I../src/
 AM_LDFLAGS = -L../src/ -lhilbert
 AM_DEFAULT_SOURCE_EXT = .c
-TESTS = module immutable
+TESTS = module immutable ancillary
