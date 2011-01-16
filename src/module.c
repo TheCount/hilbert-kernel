@@ -71,3 +71,56 @@ enum HilbertModuleType hilbert_module_gettype(struct HilbertModule * module) {
 	/* Locking the module is not necessary because type is constant during its lifetime */
 	return module->type;
 }
+
+int hilbert_module_makeimmutable(struct HilbertModule * module) {
+	assert (module != NULL);
+
+	int errcode = 0; // no error
+
+	if (hilbert_module_gettype(module) != HILBERT_INTERFACE_MODULE) {
+		errcode = HILBERT_ERR_INVALID_MODULE;
+		goto wrongtype;
+	}
+
+	if (mtx_lock(&module->mutex) != thrd_success) {
+		errcode = HILBERT_ERR_INTERNAL;
+		goto lockerror;
+	}
+
+	if (module->immutable) {
+		errcode = HILBERT_ERR_IMMUTABLE;
+	} else {
+		module->immutable = 1;
+	}
+
+	if (mtx_unlock(&module->mutex) != thrd_success)
+		errcode = HILBERT_ERR_INTERNAL;
+
+lockerror:
+wrongtype:
+	return errcode;
+}
+
+int hilbert_module_isimmutable(struct HilbertModule * restrict module, int * restrict errcode) {
+	assert (module != NULL);
+	assert (errcode != NULL);
+
+	int rc = 0;
+
+	if (mtx_lock(&module->mutex) != thrd_success) {
+		*errcode = HILBERT_ERR_INTERNAL;
+		goto lockerror;
+	}
+
+	rc = module->immutable;
+
+	if (mtx_unlock(&module->mutex) != thrd_success) {
+		*errcode = HILBERT_ERR_INTERNAL;
+		goto lockerror;
+	}
+
+	*errcode = 0;
+lockerror:
+	return rc;
+}
+
