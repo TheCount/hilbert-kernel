@@ -37,6 +37,7 @@
 #define HILBERT_CL_ObjectVector_H__
 
 #include<assert.h>
+#include<stdint.h>
 #include<stdlib.h>
 
 /**

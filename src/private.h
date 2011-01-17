@@ -25,6 +25,9 @@
 
 #include"hilbert.h"
 
+#include"cl/ivector.h"
+#include"cl/ovector.h"
+
 #include"threads/hthreads.h"
 
 /**
@@ -74,6 +77,16 @@ struct HilbertModule {
 	 * Ancillary (user set) data.
 	 */
 	void * ancillary;
+
+	/**
+	 * Module constituents.
+	 */
+	ObjectVector * objects;
+
+	/**
+	 * Kind handles.
+	 */
+	IndexVector * kindhandles;
 };
 
 #endif

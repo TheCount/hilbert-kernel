@@ -25,6 +25,9 @@
 #include<assert.h>
 #include<stdlib.h>
 
+#include"cl/ivector.h"
+#include"cl/ovector.h"
+
 #include"threads/hthreads.h"
 
 HilbertModule * hilbert_module_create(enum HilbertModuleType type) {
@@ -49,8 +52,20 @@ HilbertModule * hilbert_module_create(enum HilbertModuleType type) {
 	module->immutable = 0;
 	module->ancillary = NULL;
 
+	module->objects = hilbert_ovector_new();
+	if (module->objects == NULL)
+		goto noobjectmem;
+
+	module->kindhandles = hilbert_ivector_new();
+	if (module->kindhandles == NULL)
+		goto nokindhandlesmem;
+
 	return module;
 
+nokindhandlesmem:
+	hilbert_ovector_del(module->objects);
+noobjectmem:
+	mtx_destroy(&module->mutex);
 mutexfail:
 	free(module);
 allocfail:
@@ -61,6 +76,8 @@ wrongtype:
 void hilbert_module_free(struct HilbertModule * module) {
 	assert (module != NULL);
 
+	hilbert_ivector_del(module->kindhandles);
+	hilbert_ovector_del(module->objects);
 	mtx_destroy(&module->mutex);
 	free(module);
 }
