@@ -31,7 +31,7 @@ cl/ivector.h: cl/vector.template.h
 cl/ovector.h: cl/vector.template.h
 	($(ECHO) $(CL_MSG) && $(SED) "s/VECTOR/ObjectVector/g;s/VALUE_TYPE/union Object */g;s/VITER/ObjectVectorIterator/g;s/PREFIX/hilbert_ovector/g" $<) > $@
 
-private.h: cl/ivector.h cl/ovector.h
+private.h: cl/iset.h cl/ivector.h cl/ovector.h
 
 AM_CFLAGS = -Wall -Wextra -pedantic -D_GNU_SOURCE=1 -DHILBERT_THREADSAFE=1
 AM_LDFLAGS = -lpthread -export-symbols-regex "^(hilbert_|HILBERT_|Hilbert).*"

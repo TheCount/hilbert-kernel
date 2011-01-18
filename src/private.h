@@ -25,6 +25,7 @@
 
 #include"hilbert.h"
 
+#include"cl/iset.h"
 #include"cl/ivector.h"
 #include"cl/ovector.h"
 
@@ -34,6 +35,9 @@
  * Generic object type.
  */
 struct Generic {
+	/**
+	 * Object type.
+	 */
 	unsigned int type;
 };
 
@@ -41,9 +45,16 @@ struct Generic {
  * Kind.
  */
 struct Kind {
+	/**
+	 * Kind type (HILBERT_TYPE_KIND set).
+	 */
 	unsigned int type;
 
-	// FIXME: add equivalence classes
+	/**
+	 * Equivalence class.
+	 * If this kind is a singleton, the equivalence class is <code>NULL</code>.
+	 */
+	IndexSet * equivalence_class;
 };
 
 /**
