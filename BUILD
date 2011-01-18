@@ -21,8 +21,9 @@ Building the source
 The Hilbert kernel library should be buildable with any ISO C99 compatible
 compiler (at least in its single-threaded incarnation). As a convenience,
 build files for use with the GNU build system (autotools) are provided. If you
-want to build with autotools, issue the following commands from the source
-root directory:
+want to build with autotools, first install autoconf, automake and libtool (for
+example, via your system's package manage). Then issue the following commands from
+the source root directory:
 
 $ autoreconf -i
 $ ./configure
