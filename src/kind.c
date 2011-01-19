@@ -184,3 +184,44 @@ nolock:
 	return result;
 }
 
+int hilbert_kind_isequivalent(struct HilbertModule * restrict module, HilbertHandle kindhandle1, HilbertHandle kindhandle2,
+		int * restrict errcode) {
+	assert (module != NULL);
+	assert (errcode != NULL);
+
+	int rc = 0;
+
+	if (mtx_lock(&module->mutex) != thrd_success) {
+		*errcode = HILBERT_ERR_INTERNAL;
+		goto nolock;
+	}
+
+	union Object * object1 = hilbert_object_retrieve(module, kindhandle1, HILBERT_TYPE_KIND);
+	union Object * object2 = hilbert_object_retrieve(module, kindhandle2, HILBERT_TYPE_KIND);
+	if ((object1 == NULL) || (object2 == NULL)) {
+		*errcode = HILBERT_ERR_INVALID_HANDLE;
+		goto wronghandle;
+	}
+
+	*errcode = 0;
+
+	if (object1 == object2) {
+		rc = 1;
+		goto equality;
+	}
+	if ((object1->kind.equivalence_class == NULL)
+			|| (object1->kind.equivalence_class != object2->kind.equivalence_class)) {
+		goto inequivalent;
+	}
+
+	rc = 1;
+
+inequivalent:
+equality:
+wronghandle:
+	if (mtx_unlock(&module->mutex) != thrd_success)
+		*errcode = HILBERT_ERR_INTERNAL;
+nolock:
+	return rc;
+}
+
