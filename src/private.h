@@ -100,4 +100,27 @@ struct HilbertModule {
 	IndexVector * kindhandles;
 };
 
+/**
+ * Retrieves an object if it has the specified type.
+ *
+ * @param module pointer to a Hilbert module.
+ * 	Any necessary locking on the module must be done by the caller!
+ * @param handle object handle.
+ * @param typeflags sought type flags.
+ *
+ * @return If <code>handle</code> is in the range of <code>module->objects</code> and the specified object's type has at least one bit in common with <code>typeflags</code>, a pointer to that object is returned.
+ * 	Otherwise, <code>NULL</code> is returned.
+ */
+static inline union Object * hilbert_object_retrieve(const struct HilbertModule * module, HilbertHandle handle, unsigned int typeflags) {
+	assert (module != NULL);
+
+	size_t numobjects = hilbert_ovector_count(module->objects);
+	if (handle >= numobjects)
+		return NULL;
+	union Object * result = hilbert_ovector_get(module->objects, handle);
+	if (!(result->generic.type & typeflags))
+		return NULL;
+	return result;
+}
+
 #endif
