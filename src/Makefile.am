@@ -37,4 +37,4 @@ AM_CFLAGS = -Wall -Wextra -pedantic -D_GNU_SOURCE=1 -DHILBERT_THREADSAFE=1
 AM_LDFLAGS = -lpthread -export-symbols-regex "^(hilbert_|HILBERT_|Hilbert).*"
 include_HEADERS = hilbert.h
 lib_LTLIBRARIES = libhilbert.la
-libhilbert_la_SOURCES = cl/*.h threads/*.h private.h module.c kind.c misc.c
+libhilbert_la_SOURCES = cl/*.h threads/*.h private.h module.c kind.c misc.c object.c
