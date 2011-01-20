@@ -66,6 +66,35 @@ union Object {
 };
 
 /**
+ * Frees a kind.
+ *
+ * @param kind pointer to a previously allocated kind.
+ */
+static inline void hilbert_kind_free(union Object * kind) {
+	/* kind->equivalence_class handled in hilbert_module_free() */
+	free(kind);
+}
+
+/**
+ * Frees an object.
+ *
+ * @param pointer to constituent to be freed.
+ */
+static inline void hilbert_object_free(union Object * object) {
+	assert (object != NULL);
+	unsigned int type = object->generic.type;
+	switch (type) {
+		case HILBERT_TYPE_KIND:
+			hilbert_kind_free(object);
+			break;
+		/* FIXME: case ... */
+		default:
+			assert (2 + 2 == 5);
+			break;
+	}
+}
+
+/**
  * Private Hilbert module structure.
  */
 struct HilbertModule {

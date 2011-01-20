@@ -76,6 +76,28 @@ wrongtype:
 void hilbert_module_free(struct HilbertModule * module) {
 	assert (module != NULL);
 
+	/* free kind equivalence classes */
+	for (IndexVectorIterator i = hilbert_ivector_iterator_new(module->kindhandles);
+			hilbert_ivector_iterator_hasnext(&i);) {
+		union Object * object = hilbert_ovector_get(module->objects, hilbert_ivector_iterator_next(&i));
+		assert (object->generic.type & HILBERT_TYPE_KIND);
+		IndexSet * equivalence_class = object->kind.equivalence_class;
+		if (equivalence_class == NULL)
+			continue;
+		for (IndexSetIterator j = hilbert_iset_iterator_new(equivalence_class);
+				hilbert_iset_iterator_hasnext(&j);) {
+			union Object * object2 = hilbert_ovector_get(module->objects, hilbert_iset_iterator_next(&j));
+			assert (object2->generic.type & HILBERT_TYPE_KIND);
+			object2->kind.equivalence_class = NULL;
+		}
+		hilbert_iset_del(equivalence_class);
+	}
+
+	/* free objects */
+	for (ObjectVectorIterator i = hilbert_ovector_iterator_new(module->objects); hilbert_ovector_iterator_hasnext(&i);)
+		hilbert_object_free(hilbert_ovector_iterator_next(&i));
+
+	/* free other stuff */
 	hilbert_ivector_del(module->kindhandles);
 	hilbert_ovector_del(module->objects);
 	mtx_destroy(&module->mutex);
