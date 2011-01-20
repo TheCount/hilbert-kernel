@@ -184,6 +184,91 @@ nolock:
 	return result;
 }
 
+int hilbert_kind_identify(struct HilbertModule * module, HilbertHandle kindhandle1, HilbertHandle kindhandle2) {
+	assert (module != NULL);
+
+	int errcode;
+	int rc;
+
+	if (hilbert_module_gettype(module) != HILBERT_INTERFACE_MODULE) {
+		errcode = HILBERT_ERR_INVALID_MODULE;
+		goto invalidmodule;
+	}
+
+	if (mtx_lock(&module->mutex) != thrd_success) {
+		errcode = HILBERT_ERR_INTERNAL;
+		goto nolock;
+	}
+
+	rc = hilbert_module_isimmutable(module, &errcode);
+	if (errcode != 0)
+		goto immutable;
+	if (rc) {
+		errcode = HILBERT_ERR_IMMUTABLE;
+		goto immutable;
+	}
+
+	union Object * object1 = hilbert_object_retrieve(module, kindhandle1, HILBERT_TYPE_KIND);
+	union Object * object2 = hilbert_object_retrieve(module, kindhandle2, HILBERT_TYPE_KIND);
+	if ((object1 == NULL) || (object2 == NULL)) {
+		errcode = HILBERT_ERR_INVALID_HANDLE;
+		goto invalidhandle;
+	}
+	/* check if already equivalent */
+	errcode = 0;
+	if (object1 == object2)
+		goto equivalent;
+	if ((object1->kind.equivalence_class != NULL)
+			&& (object1->kind.equivalence_class == object2->kind.equivalence_class))
+		goto equivalent;
+
+	errcode = HILBERT_ERR_NOMEM;
+	IndexSet * equivalence_class = hilbert_iset_new();
+	if (equivalence_class == NULL)
+		goto noeqcmem;
+	/* create union of equivalence classes */
+	if (object1->kind.equivalence_class != NULL) {
+		if (hilbert_iset_addall(equivalence_class, object1->kind.equivalence_class) != 0)
+			goto nounionmem;
+	}
+	if (object2->kind.equivalence_class != NULL) {
+		if (hilbert_iset_addall(equivalence_class, object2->kind.equivalence_class) != 0)
+			goto nounionmem;
+	}
+	if (hilbert_iset_add(equivalence_class, kindhandle1) != 0)
+		goto nounionmem;
+	if (hilbert_iset_add(equivalence_class, kindhandle2) != 0)
+		goto nounionmem;
+	/* delete old equivalence classes */
+	if (object1->kind.equivalence_class != NULL)
+		hilbert_iset_del(object1->kind.equivalence_class);
+	if (object2->kind.equivalence_class != NULL)
+		hilbert_iset_del(object2->kind.equivalence_class);
+	/* update all affected equivalence classes */
+	for (IndexSetIterator i = hilbert_iset_iterator_new(equivalence_class); hilbert_iset_iterator_hasnext(&i);) {
+		HilbertHandle handle = hilbert_iset_iterator_next(&i);
+		union Object * object = hilbert_object_retrieve(module, handle, ~0U);
+		assert (object->generic.type & HILBERT_TYPE_KIND);
+		object->kind.equivalence_class = equivalence_class;
+	}
+
+	errcode = 0;
+	goto success;
+
+nounionmem:
+	hilbert_iset_del(equivalence_class);
+noeqcmem:
+equivalent:
+invalidhandle:
+immutable:
+success:
+	if (mtx_unlock(&module->mutex) != thrd_success)
+		errcode = HILBERT_ERR_INTERNAL;
+nolock:
+invalidmodule:
+	return errcode;
+}
+
 int hilbert_kind_isequivalent(struct HilbertModule * restrict module, HilbertHandle kindhandle1, HilbertHandle kindhandle2,
 		int * restrict errcode) {
 	assert (module != NULL);
