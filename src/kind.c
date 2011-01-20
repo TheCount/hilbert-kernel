@@ -310,3 +310,48 @@ nolock:
 	return rc;
 }
 
+HilbertHandle * hilbert_kind_equivalenceclass(struct HilbertModule * restrict module, HilbertHandle kindhandle,
+		size_t * restrict count, int * restrict errcode) {
+	assert (module != NULL);
+	assert (count != NULL);
+	assert (errcode != NULL);
+
+	HilbertHandle * result = NULL;
+
+	if (mtx_lock(&module->mutex) != thrd_success) {
+		*errcode = HILBERT_ERR_INTERNAL;
+		goto nolock;
+	}
+
+	union Object * object = hilbert_object_retrieve(module, kindhandle, HILBERT_TYPE_KIND);
+	if (object == NULL) {
+		*errcode = HILBERT_ERR_INVALID_HANDLE;
+		goto wronghandle;
+	}
+
+	*errcode = HILBERT_ERR_NOMEM;
+	if (object->kind.equivalence_class == NULL) {
+		*count = 1;
+		result = malloc(sizeof(*result));
+		if (result == NULL)
+			goto nomem;
+		result[0] = kindhandle;
+	} else {
+		*count = hilbert_iset_count(object->kind.equivalence_class);
+		result = malloc(*count * sizeof(*result));
+		if (result == NULL)
+			goto nomem;
+		IndexSetIterator iterator = hilbert_iset_iterator_new(object->kind.equivalence_class);
+		for (size_t i = 0; i != *count; ++i)
+			result[i] = hilbert_iset_iterator_next(&iterator);
+	}
+	*errcode = 0;
+
+nomem:
+wronghandle:
+	if (mtx_unlock(&module->mutex) != thrd_success)
+		*errcode = HILBERT_ERR_INTERNAL;
+nolock:
+	return result;
+}
+
