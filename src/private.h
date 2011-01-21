@@ -26,6 +26,7 @@
 #include"hilbert.h"
 
 #include"cl/iset.h"
+#include"cl/mset.h"
 #include"cl/ivector.h"
 #include"cl/ovector.h"
 
@@ -111,7 +112,12 @@ struct HilbertModule {
 	/**
 	 * Whether this module is immutable.
 	 */
-	int immutable;
+	unsigned int immutable: 1;
+
+	/**
+	 * Whether user has requested this module to be freed.
+	 */
+	unsigned int freeable: 1;
 
 	/**
 	 * Ancillary (user set) data.
@@ -127,6 +133,16 @@ struct HilbertModule {
 	 * Kind handles.
 	 */
 	IndexVector * kindhandles;
+
+	/**
+	 * Set of modules this module depends on.
+	 */
+	ModuleSet * dependencies;
+
+	/**
+	 * Set of modules depending on this module.
+	 */
+	ModuleSet * reverse_dependencies;
 };
 
 /**

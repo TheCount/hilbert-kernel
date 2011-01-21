@@ -26,6 +26,7 @@
 #include<stdlib.h>
 
 #include"cl/iset.h"
+#include"cl/mset.h"
 #include"cl/ivector.h"
 #include"cl/ovector.h"
 
@@ -51,6 +52,7 @@ HilbertModule * hilbert_module_create(enum HilbertModuleType type) {
 		goto mutexfail;
 
 	module->immutable = 0;
+	module->freeable = 0;
 	module->ancillary = NULL;
 
 	module->objects = hilbert_ovector_new();
@@ -61,8 +63,20 @@ HilbertModule * hilbert_module_create(enum HilbertModuleType type) {
 	if (module->kindhandles == NULL)
 		goto nokindhandlesmem;
 
+	module->dependencies = hilbert_mset_new();
+	if (module->dependencies == NULL)
+		goto nodepmem;
+
+	module->reverse_dependencies = hilbert_mset_new();
+	if (module->reverse_dependencies == NULL)
+		goto noreversedepmem;
+
 	return module;
 
+noreversedepmem:
+	hilbert_mset_del(module->dependencies);
+nodepmem:
+	hilbert_ivector_del(module->kindhandles);
 nokindhandlesmem:
 	hilbert_ovector_del(module->objects);
 noobjectmem:
@@ -76,6 +90,38 @@ wrongtype:
 
 void hilbert_module_free(struct HilbertModule * module) {
 	assert (module != NULL);
+	int rc;
+
+	/* Remove module from dependencies and possibly deallocate them */
+	rc = mtx_lock(&module->mutex);
+	assert (rc == thrd_success);
+
+	module->freeable = 1;
+
+	for (ModuleSetIterator i = hilbert_mset_iterator_new(module->dependencies); hilbert_mset_iterator_hasnext(&i);) {
+		struct HilbertModule * dependency = hilbert_mset_iterator_next(&i);
+		rc = mtx_lock(&dependency->mutex);
+		assert (rc == thrd_success);
+		rc = hilbert_mset_remove(dependency->reverse_dependencies, module);
+		assert (rc);
+		int freeable = dependency->freeable;
+		size_t count = hilbert_mset_count(dependency->reverse_dependencies);
+		rc = mtx_unlock(&dependency->mutex);
+		assert (rc == thrd_success);
+		hilbert_mset_remove(module->dependencies, dependency);
+		if (freeable && (count == 0)) {
+			/* dependency is freeable and its dependencies and reverse dependencies are empty.
+			 * Hence it can be freed definitely this time. */
+			hilbert_module_free(dependency);
+		}
+	}
+
+	/* return if we still have reverse dependencies and leave final freeing to them */
+	size_t count = hilbert_mset_count(module->reverse_dependencies);
+	rc = mtx_unlock(&module->mutex);
+	assert (rc == thrd_success);
+	if (count != 0)
+		return;
 
 	/* free kind equivalence classes */
 	for (IndexVectorIterator i = hilbert_ivector_iterator_new(module->kindhandles);
@@ -99,6 +145,8 @@ void hilbert_module_free(struct HilbertModule * module) {
 		hilbert_object_free(hilbert_ovector_iterator_next(&i));
 
 	/* free other stuff */
+	hilbert_mset_del(module->reverse_dependencies);
+	hilbert_mset_del(module->dependencies);
 	hilbert_ivector_del(module->kindhandles);
 	hilbert_ovector_del(module->objects);
 	mtx_destroy(&module->mutex);
