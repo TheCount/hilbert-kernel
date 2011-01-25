@@ -433,6 +433,11 @@ HilbertHandle hilbert_module_param(HilbertModule * restrict dest, HilbertModule 
  * 	and a bitwise OR of one or more of the following flags is returned:
  * 		- <code>#HILBERT_TYPE_KIND</code>:
  * 			The object specified by <code>object</code> is a kind.
+ * 		- <code>#HILBERT_TYPE_PARAM</code>:
+ * 			The object specified by <code>object</code> is a parameter.
+ * 		- <code>#HILBERT_TYPE_EXTERNAL</code>:
+ * 			The object specified by <code>object</code> was created through a parameterisation, an import,
+ * 			or an export.
  */
 unsigned int hilbert_object_gettype(HilbertModule * restrict module, HilbertHandle object, int * restrict errcode);
 
