@@ -17,6 +17,7 @@ libtool
 src/libhilbert.la
 *.o
 *.lo
+*.loT
 
 # Tests
 tests/*
