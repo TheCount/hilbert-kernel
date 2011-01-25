@@ -384,6 +384,18 @@ static inline int hilbert_mset_remove(ModuleSet * set, struct HilbertModule * va
 }
 
 /**
+ * Clears a set.
+ *
+ * @param set Pointer to a set.
+ */
+static inline void hilbert_mset_clear(ModuleSet * set) {
+	assert (set != NULL);
+
+	set->count = 0;
+	memset(set->buckets, 0, (set->sizemask + 1) * sizeof(*set->buckets));
+}
+
+/**
  * Checks whether a value is present in a set.
  *
  * @param set Pointer to a set.

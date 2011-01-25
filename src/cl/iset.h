@@ -384,6 +384,18 @@ static inline int hilbert_iset_remove(IndexSet * set, HilbertHandle value) {
 }
 
 /**
+ * Clears a set.
+ *
+ * @param set Pointer to a set.
+ */
+static inline void hilbert_iset_clear(IndexSet * set) {
+	assert (set != NULL);
+
+	set->count = 0;
+	memset(set->buckets, 0, (set->sizemask + 1) * sizeof(*set->buckets));
+}
+
+/**
  * Checks whether a value is present in a set.
  *
  * @param set Pointer to a set.

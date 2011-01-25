@@ -383,6 +383,18 @@ static inline int PREFIX_remove(SET * set, VALUE_TYPE value) {
 }
 
 /**
+ * Clears a set.
+ *
+ * @param set Pointer to a set.
+ */
+static inline void PREFIX_clear(SET * set) {
+	assert (set != NULL);
+
+	set->count = 0;
+	memset(set->buckets, 0, (set->sizemask + 1) * sizeof(*set->buckets));
+}
+
+/**
  * Checks whether a value is present in a set.
  *
  * @param set Pointer to a set.
