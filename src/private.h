@@ -25,6 +25,7 @@
 
 #include"hilbert.h"
 
+#include"cl/pmap.h"
 #include"cl/iset.h"
 #include"cl/mset.h"
 #include"cl/ivector.h"
@@ -47,7 +48,7 @@ struct Generic {
  */
 struct Kind {
 	/**
-	 * Kind type (HILBERT_TYPE_KIND set).
+	 * Kind type (#HILBERT_TYPE_KIND set).
 	 */
 	unsigned int type;
 
@@ -59,21 +60,74 @@ struct Kind {
 };
 
 /**
+ * External kind (parameter, import, or export)
+ */
+struct ExternalKind {
+	/**
+	 * External kind type (#HILBERT_TYPE_KIND | #HILBERT_TYPE_EXTERNAL)
+	 */
+	unsigned int type;
+
+	/**
+	 * Equivalence class.
+	 * If this kind is a singleton, the equivalence class is <code>NULL</code>.
+	 */
+	IndexSet * equivalence_class;
+
+	/**
+	 * Index into <code>#struct HilbertModule::paramhandles</code>
+	 */
+	size_t paramindex;
+};
+
+/**
+ * Parameter.
+ */
+struct Param {
+	/**
+	 * Parameter type (#HILBERT_TYPE_PARAM)
+	 */
+	unsigned int type;
+
+	/**
+	 * Module with which we parameterise.
+	 */
+	struct HilbertModule * module;
+
+	/**
+	 * Map mapping local handles to handles of <code>module</code>.
+	 */
+	ParamMap * handle_map;
+};
+
+/**
  * Object.
  */
 union Object {
 	struct Generic generic;
 	struct Kind kind;
+	struct ExternalKind external_kind;
+	struct Param param;
 };
 
 /**
  * Frees a kind.
  *
- * @param kind pointer to a previously allocated kind.
+ * @param kind Pointer to a previously allocated kind.
  */
 static inline void hilbert_kind_free(union Object * kind) {
 	/* kind->equivalence_class handled in hilbert_module_free() */
 	free(kind);
+}
+
+/**
+ * Frees a parameter.
+ *
+ * @param param Pointer to a previously allocated parameter.
+ */
+static inline void hilbert_param_free(union Object * param) {
+	hilbert_pmap_del(param->param.handle_map);
+	free(param);
 }
 
 /**
@@ -86,7 +140,11 @@ static inline void hilbert_object_free(union Object * object) {
 	unsigned int type = object->generic.type;
 	switch (type) {
 		case HILBERT_TYPE_KIND:
+		case HILBERT_TYPE_KIND | HILBERT_TYPE_EXTERNAL:
 			hilbert_kind_free(object);
+			break;
+		case HILBERT_TYPE_PARAM:
+			hilbert_param_free(object);
 			break;
 		/* FIXME: case ... */
 		default:
@@ -133,6 +191,11 @@ struct HilbertModule {
 	 * Kind handles.
 	 */
 	IndexVector * kindhandles;
+
+	/**
+	 * Parameter handles.
+	 */
+	IndexVector * paramhandles;
 
 	/**
 	 * Set of modules this module depends on.
