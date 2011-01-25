@@ -419,6 +419,30 @@ void hilbert_array_free(HilbertHandle * eqc);
 HilbertHandle hilbert_module_param(HilbertModule * restrict dest, HilbertModule * restrict src, size_t argc, const HilbertHandle * restrict argv, HilbertMapperCallback mapper, int * restrict errcode);
 
 /**
+ * Returns all objects of a Hilbert module.
+ *
+ * @param module Pointer to a Hilbert module.
+ * @param size Pointer to a location where the size of the returned array can be stored.
+ * @param errcode Pointer to a location where an integer error code can be stored.
+ *
+ * @return On error, a negative value is stored in <code>*errcode</code> and <code>*size</code> and
+ * 	the return value is unspecified. <code>*errcode</code> may be one of the following error codes:
+ * 		- <code>#HILBERT_ERR_NOMEM</code>:
+ * 			There was not enough memory available to perform the request.
+ * 	On success, <code>0</code> is stored in <code>*errcode</code>,
+ * 	and a pointer to an array of Hilbert handles whose size is stored in <code>*size</code> is returned.
+ * 	The handles in the returned array correspond to the Hilbert objects in the module pointed to by
+ * 	<code>module</code>. The handles are stored in the order in which they were created. If several handles were
+ * 	created simultaneously in an atomic operation (such as a parameterisation), they adhere to the order with
+ * 	respect to the other handles, but among themselves, the order is unspecified.
+ * 	The returned array only corresponds to the current state of the module.
+ * 	It can be freed with <code>#hilbert_array_free()</code>.
+ *
+ * @sa #hilbert_array_free()
+ */
+HilbertHandle * hilbert_module_getobjects(HilbertModule * restrict module, size_t * restrict size, int * restrict errcode);
+
+/**
  * Returns the type flags of the object with the specified handle.
  *
  * @param module pointer to a Hilbert module.

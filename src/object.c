@@ -23,8 +23,43 @@
 #include"private.h"
 
 #include<assert.h>
+#include<stdlib.h>
+
+#include"cl/ovector.h"
 
 #include"threads/hthreads.h"
+
+HilbertHandle * hilbert_module_getobjects(struct HilbertModule * restrict module, size_t * restrict size,
+		int * restrict errcode) {
+	assert (module != NULL);
+	assert (size != NULL);
+	assert (errcode != NULL);
+
+	HilbertHandle * result = NULL;
+
+	if (mtx_lock(&module->mutex) != thrd_success) {
+		*errcode = HILBERT_ERR_INTERNAL;
+		goto nolock;
+	}
+
+	*size = hilbert_ovector_count(module->objects);
+	result = malloc(*size * sizeof(*result));
+	if (result == NULL) {
+		*errcode = HILBERT_ERR_NOMEM;
+		goto nomem;
+	}
+
+	for (size_t i = 0; i != *size; ++i)
+		result[i] = i;
+
+	*errcode = 0;
+
+nomem:
+	if (mtx_unlock(&module->mutex) != thrd_success)
+		*errcode = HILBERT_ERR_INTERNAL;
+nolock:
+	return result;
+}
 
 unsigned int hilbert_object_gettype(struct HilbertModule * restrict module, HilbertHandle handle, int * restrict errcode) {
 	assert (module != NULL);
