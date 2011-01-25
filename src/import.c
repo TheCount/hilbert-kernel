@@ -219,11 +219,6 @@ static int load_kinds(HilbertModule * restrict dest, HilbertModule * restrict sr
 		errcode = HILBERT_ERR_NOMEM;
 		goto normapmem;
 	}
-	//EQCSet * eqc_set = hilbert_eset_new(); /* Backup of old equivalence classes */
-	//if (eqc_set == NULL) {
-	//	errcode = HILBERT_ERR_NOMEM;
-	//	goto noeqcsetmem;
-	//}
 	IndexSet * already_handled = hilbert_iset_new(); /* kind handles which have already been handled */
 	if (already_handled == NULL) {
 		errcode = HILBERT_ERR_NOMEM;
@@ -306,36 +301,6 @@ static int load_kinds(HilbertModule * restrict dest, HilbertModule * restrict sr
 		errcode = HILBERT_ERR_NOMEM;
 		goto nobackupmem;
 	}
-	///*** step 1: create backups of the old equivalence classes ***/
-	//for (ParamMapIterator i = hilbert_pmap_iterator_new(param->handle_map); hilbert_pmap_iterator_hasnext(&i);) {
-	//	ParamMapEntry entry = hilbert_pmap_iterator_next(&i);
-	//	if (hilbert_iset_contains(already_handled, entry.key))
-	//		continue;
-	//	union Object * object = hilbert_ovector_get(dest->objects, entry.key, HILBERT_TYPE_KIND);
-	//	assert (object != NULL);
-	//	struct Kind * kind = &object->kind;
-	//	if (kind->equivalence_class != NULL) {
-	//		/* backup this equivalence class */
-	//		IndexSet * equivalence_class = hilbert_iset_clone(kind->equivalence_class);
-	//		if (equivalence_class == NULL) {
-	//			errcode = HILBERT_ERR_NOMEM;
-	//			goto noeqcmem;
-	//		}
-	//		if (hilbert_eset_add(eqc_set, equivalence_class) != 0) {
-	//			hilbert_iset_del(equivalence_class);
-	//			errcode = HILBERT_ERR_NOMEM;
-	//			goto nobackupmem;
-	//		}
-	//		for (IndexSetIterator j = hilbert_iset_iterator_new(equivalence_class); hilbert_iset_iterator_hasnext(&j);) {
-	//			if (hilbert_iset_add(already_handled, hilbert_iset_iterator_next(&j)) != 0) {
-	//				errcode = HILBERT_ERR_NOMEM;
-	//				goto nobackupmem;
-	//			}
-	//		}
-	//	}
-	//}
-	///*** step 2: identify kinds ***/
-	//hilbert_iset_clear(already_handled);
 	for (ParamMapIterator i = hilbert_pmap_iterator_new(param->handle_map); hilbert_pmap_iterator_hasnext(&i);) {
 		struct ParamMapEntry entry = hilbert_pmap_iterator_next(&i);
 		if (hilbert_iset_contains(already_handled, entry.value))
@@ -362,14 +327,9 @@ static int load_kinds(HilbertModule * restrict dest, HilbertModule * restrict sr
 	eqc_backup_free(backup);
 iderror:
 nobackupmem:
-	//for (EQCSetIterator i = hilbert_eset_iterator_new(eqc_set); hilbert_eset_iterator_hasnext(&i);)
-	//	hilbert_iset_del(hilbert_eset_iterator_next(&i));
-//noeqcmem:
 error:
 	hilbert_iset_del(already_handled);
 noahsetmem:
-//	hilbert_eset_del(eqc_set);
-//noeqcsetmem:
 	hilbert_pmap_del(reverse_map);
 normapmem:
 	return errcode;
