@@ -465,4 +465,21 @@ HilbertHandle * hilbert_module_getobjects(HilbertModule * restrict module, size_
  */
 unsigned int hilbert_object_gettype(HilbertModule * restrict module, HilbertHandle object, int * restrict errcode);
 
+/**
+ * Returns the parameter through which an object was created.
+ *
+ * @param module Pointer to a Hilbert module.
+ * @param object Object handle of an object in <code>module</code>.
+ * @param errcode Pointer to a location where an integer error code can be stored.
+ *
+ * @return On error, a negative value is stored in <code>*errcode</code> and the return value is unspecified.
+ * 	<code>*errcode</code> may be one of the following error codes:
+ * 		- <code>#HILBERT_ERR_INVALID_HANDLE</code>:
+ * 			<code>object</code> is not a valid object handle for the module pointed to by <code>module</code>,
+ * 			or the object is not an external object.
+ * 	On success, <code>0</code> is stored in <code>*errcode</code>,
+ * 	and the parameter handle through which the object corresponding to <code>object</code> was created is returned.
+ */
+HilbertHandle hilbert_object_getparam(HilbertModule * restrict module, HilbertHandle object, int * restrict errcode);
+
 #endif

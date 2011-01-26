@@ -87,3 +87,35 @@ nolock:
 	return type;
 }
 
+HilbertHandle hilbert_object_getparam(struct HilbertModule * restrict module, HilbertHandle handle,
+		int * restrict errcode) {
+	assert (module != NULL);
+	assert (errcode != NULL);
+
+	HilbertHandle result = 0;
+
+	if (mtx_lock(&module->mutex) != thrd_success) {
+		*errcode = HILBERT_ERR_INTERNAL;
+		goto nolock;
+	}
+
+	union Object * object = hilbert_object_retrieve(module, handle, HILBERT_TYPE_EXTERNAL);
+	if (object == NULL) {
+		*errcode = HILBERT_ERR_INVALID_HANDLE;
+		goto wronghandle;
+	}
+
+	if (object->generic.type & HILBERT_TYPE_KIND) {
+		result = hilbert_ivector_get(module->paramhandles, object->external_kind.paramindex);
+	} else { // FIXME: functors, etc.
+		assert (0);
+	}
+
+	*errcode = 0;
+
+wronghandle:
+	if (mtx_unlock(&module->mutex) != thrd_success)
+		*errcode = HILBERT_ERR_INTERNAL;
+nolock:
+	return result;
+}
