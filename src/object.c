@@ -119,3 +119,34 @@ wronghandle:
 nolock:
 	return result;
 }
+
+HilbertModule * hilbert_object_getsource(struct HilbertModule * restrict module, HilbertHandle handle,
+		int * restrict errcode) {
+	assert (module != NULL);
+	assert (errcode != NULL);
+
+	HilbertModule * result;
+
+	HilbertHandle param = hilbert_object_getparam(module, handle, errcode);
+	if (*errcode != 0)
+		goto noparam;
+
+	if (mtx_lock(&module->mutex) != thrd_success) {
+		*errcode = HILBERT_ERR_INTERNAL;
+		goto nolock;
+	}
+
+	union Object * object = hilbert_object_retrieve(module, param, HILBERT_TYPE_PARAM);
+	assert (object != NULL);
+
+	result = object->param.module;
+	*errcode = 0;
+
+	if (mtx_unlock(&module->mutex) != thrd_success)
+		*errcode = HILBERT_ERR_INTERNAL;
+
+nolock:
+noparam:
+	return result;
+}
+
