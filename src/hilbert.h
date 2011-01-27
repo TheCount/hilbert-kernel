@@ -500,4 +500,25 @@ HilbertHandle hilbert_object_getparam(HilbertModule * restrict module, HilbertHa
  */
 HilbertModule * hilbert_object_getsource(HilbertModule * restrict module, HilbertHandle object, int * restrict errcode);
 
+/**
+ * Returns the source module handle of an object.
+ * If the source module has already been freed when this function is called, the behaviour is undefined.
+ *
+ * @param module Pointer to a Hilbert module.
+ * @param object Object handle of an object in the module pointed to by <code>module</code>.
+ * @param errcode Pointer to a location where an integer error code can be stored.
+ *
+ * @return On error, a negative value is stored in <code>*errcode</code> and the return value is unspecified.
+ * 	<code>*errcode</code> may be one of the following error codes:
+ * 		- <code>#HILBERT_ERR_INVALID_HANDLE</code>:
+ * 			<code>object</code> is not a valid object handle for the module pointed to by <code>module</code>,
+ * 			or the object is not an external object.
+ * 	On success, <code>0</code> is stored in <code>*errcode</code>,
+ * 	and the handle in the source module is returned.
+ *
+ * @sa #hilbert_object_getsource()
+ */
+HilbertHandle hilbert_object_getsourcehandle(HilbertModule * restrict module, HilbertHandle object,
+		int * restrict errcode);
+
 #endif

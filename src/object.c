@@ -125,7 +125,7 @@ HilbertModule * hilbert_object_getsource(struct HilbertModule * restrict module,
 	assert (module != NULL);
 	assert (errcode != NULL);
 
-	HilbertModule * result;
+	HilbertModule * result = NULL;
 
 	HilbertHandle param = hilbert_object_getparam(module, handle, errcode);
 	if (*errcode != 0)
@@ -140,6 +140,36 @@ HilbertModule * hilbert_object_getsource(struct HilbertModule * restrict module,
 	assert (object != NULL);
 
 	result = object->param.module;
+	*errcode = 0;
+
+	if (mtx_unlock(&module->mutex) != thrd_success)
+		*errcode = HILBERT_ERR_INTERNAL;
+
+nolock:
+noparam:
+	return result;
+}
+
+HilbertHandle hilbert_object_getsourcehandle(struct HilbertModule * restrict module, HilbertHandle handle,
+		int * restrict errcode) {
+	assert (module != NULL);
+	assert (errcode != NULL);
+
+	HilbertHandle result = 0;
+
+	HilbertHandle param = hilbert_object_getparam(module, handle, errcode);
+	if (*errcode != 0)
+		goto noparam;
+
+	if (mtx_lock(&module->mutex) != thrd_success) {
+		*errcode = HILBERT_ERR_INTERNAL;
+		goto nolock;
+	}
+
+	union Object * object = hilbert_object_retrieve(module, param, HILBERT_TYPE_PARAM);
+	assert (object != NULL);
+
+	result = *hilbert_pmap_get(object->param.handle_map, handle);
 	*errcode = 0;
 
 	if (mtx_unlock(&module->mutex) != thrd_success)
