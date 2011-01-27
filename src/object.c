@@ -25,6 +25,7 @@
 #include<assert.h>
 #include<stdlib.h>
 
+#include"cl/pmap.h"
 #include"cl/ovector.h"
 
 #include"threads/hthreads.h"
@@ -169,7 +170,7 @@ HilbertHandle hilbert_object_getsourcehandle(struct HilbertModule * restrict mod
 	union Object * object = hilbert_object_retrieve(module, param, HILBERT_TYPE_PARAM);
 	assert (object != NULL);
 
-	result = *hilbert_pmap_get(object->param.handle_map, handle);
+	result = *hilbert_pmap_post(object->param.handle_map, handle);
 	*errcode = 0;
 
 	if (mtx_unlock(&module->mutex) != thrd_success)
