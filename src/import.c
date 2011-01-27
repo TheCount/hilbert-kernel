@@ -213,12 +213,6 @@ static int load_kinds(HilbertModule * restrict dest, HilbertModule * restrict sr
 	assert (param != NULL);
 	int errcode;
 
-	///* create some local containers needed later on */
-	//ParamMap * reverse_map = hilbert_pmap_new(); /* inverse of param->handle_map */
-	//if (reverse_map == NULL) {
-	//	errcode = HILBERT_ERR_NOMEM;
-	//	goto normapmem;
-	//}
 	IndexSet * already_handled = hilbert_iset_new(); /* kind handles which have already been handled */
 	if (already_handled == NULL) {
 		errcode = HILBERT_ERR_NOMEM;
@@ -258,10 +252,6 @@ static int load_kinds(HilbertModule * restrict dest, HilbertModule * restrict sr
 				errcode = HILBERT_ERR_NOMEM;
 				goto error;
 			}
-			//if (hilbert_pmap_set(reverse_map, srckindhandle, destkindhandle) != 0) {
-			//	errcode = HILBERT_ERR_NOMEM;
-			//	goto error;
-			//}
 		} else {
 			/* map to new kind */
 			HilbertHandle destkindhandle = hilbert_ovector_count(dest->objects);
@@ -288,10 +278,6 @@ static int load_kinds(HilbertModule * restrict dest, HilbertModule * restrict sr
 				errcode = HILBERT_ERR_NOMEM;
 				goto error;
 			}
-			//if (hilbert_pmap_set(reverse_map, srckindhandle, destkindhandle) != 0) {
-			//	errcode = HILBERT_ERR_NOMEM;
-			//	goto error;
-			//}
 		}
 	}
 
@@ -330,8 +316,6 @@ nobackupmem:
 error:
 	hilbert_iset_del(already_handled);
 noahsetmem:
-//	hilbert_pmap_del(reverse_map);
-//normapmem:
 	return errcode;
 }
 
