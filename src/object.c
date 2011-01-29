@@ -181,3 +181,38 @@ noparam:
 	return result;
 }
 
+HilbertHandle hilbert_object_getdesthandle(struct HilbertModule * restrict module, HilbertHandle paramhandle,
+		HilbertHandle handle, int * restrict errcode) {
+	assert (module != NULL);
+	assert (errcode != NULL);
+
+	HilbertHandle result = 0;
+
+	if (mtx_lock(&module->mutex) != thrd_success) {
+		*errcode = HILBERT_ERR_INTERNAL;
+		goto nolock;
+	}
+
+	union Object * param = hilbert_object_retrieve(module, paramhandle, HILBERT_TYPE_PARAM);
+	if (param == NULL) {
+		*errcode = HILBERT_ERR_INVALID_HANDLE;
+		goto noparam;
+	}
+
+	const HilbertHandle * resultp = hilbert_pmap_pre(param->param.handle_map, handle);
+	if (resultp == NULL) {
+		*errcode = HILBERT_ERR_INVALID_HANDLE;
+		goto nohandle;
+	}
+
+	result = *resultp;
+	*errcode = 0;
+
+nohandle:
+noparam:
+	if (mtx_unlock(&module->mutex) != thrd_success)
+		*errcode = HILBERT_ERR_INTERNAL;
+nolock:
+	return result;
+}
+
