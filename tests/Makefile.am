@@ -20,7 +20,7 @@
 #     on wiki : http://www.wikiproofs.org/w/index.php?title=User_talk:GrafZahl
 #
 
-TESTNAMES = module immutable ancillary kind_create kind_alias kind_id kind_eq eqc objecttype param getobjects object_getparam object_getsource object_getsourcehandle
+TESTNAMES = module immutable ancillary kind_create kind_alias kind_id kind_eq eqc objecttype param getobjects object_getparam object_getsource object_getsourcehandle object_getdesthandle
 check_PROGRAMS = $(TESTNAMES)
 AM_CFLAGS = -I../src/
 AM_LDFLAGS = -L../src/ -lhilbert
