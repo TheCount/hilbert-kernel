@@ -419,6 +419,41 @@ void hilbert_array_free(HilbertHandle * eqc);
 HilbertHandle hilbert_module_param(HilbertModule * restrict dest, HilbertModule * restrict src, size_t argc, const HilbertHandle * restrict argv, HilbertMapperCallback mapper, int * restrict errcode);
 
 /**
+ * Imports a Hilbert interface module into a Hilbert proof module.
+ *
+ * @param dest Pointer to a Hilbert proof module.
+ * @param src Pointer to a Hilbert interface module.
+ * @param argc Number of parameter arguments. Must match the number of parameters of the module pointed to by <code>src</code>.
+ * @param argv Pointer to an array of parameter handles serving as arguments to the module pointed to by <code>src</code>.
+ * 	If <code>argc == 0</code>, this may be <code>NULL</code>.
+ * @param mapper User-provided callback function mapping objects coming from the parameters of the module pointed to by <code>src</code> to the argument objects.
+ * 	The callback is only called for kinds, functors <!--FIXME--> and statements <!--FIXME--> external to the module pointed to by <code>src</code>.
+ * 	If <code>argc == 0</code>, this may be <code>NULL</code>.
+ * @param errcode Pointer to an integer to convey an error code.
+ *
+ * @return On error, the return value is unspecified
+ * 	and a nonzero value is stored in <code>*errcode</code>. A positive value is a user-defined error code indicating an error which has occurred within <code>mapper</code>.
+ * 	Otherwise, the value is negative and may be one of the following error codes:
+ * 		- <code>#HILBERT_ERR_NOMEM</code>:
+ * 			There was not enough memory available to complete the import.
+ * 		- <code>#HILBERT_ERR_IMMUTABLE</code>:
+ * 			The module pointed to by <code>src</code> is not immutable.
+ * 		- <code>#HILBERT_ERR_INVALID_MODULE</code>:
+ * 			The module pointed to by <code>dest</code> is not a proof module,
+ * 			or the module pointed to by <code>src</code> is not an interface module.
+ * 		- <code>#HILBERT_ERR_COUNT_MISMATCH</code>:
+ * 			The number of arguments <code>argc</code> does not match the number of parameters of the module pointed to by <code>src</code>.
+ * 		- <code>#HILBERT_ERR_INVALID_HANDLE</code>:
+ * 			One of the handles in the array pointed to by <code>argv</code> is not a valid parameter handle.
+ * 		- <code>#HILBERT_ERR_INVALID_MAPPING</code>:
+ * 			The <code>mapper</code> callback function returned an invalid object handle.
+ * 		- <code>#HILBERT_ERR_MAPPING_CLASH</code>:
+ * 			The <code>mapper</code> callback function returned the same object handle for different source objects.
+ * 	On success, <code>0</code> is stored in <code>*errcode</code>, and a handle for the new parameter is returned.
+ */
+HilbertHandle hilbert_module_import(HilbertModule * restrict dest, HilbertModule * restrict src, size_t argc, const HilbertHandle * restrict argv, HilbertMapperCallback mapper, int * restrict errcode);
+
+/**
  * Returns all objects of a Hilbert module.
  *
  * @param module Pointer to a Hilbert module.

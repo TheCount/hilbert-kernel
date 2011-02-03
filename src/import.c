@@ -299,7 +299,10 @@ static int load_kinds(HilbertModule * restrict dest, HilbertModule * restrict sr
 				HilbertHandle srckindhandle = hilbert_iset_iterator_next(&j);
 				const HilbertHandle * destkindhandle = hilbert_pmap_pre(param->handle_map, srckindhandle);
 				assert (destkindhandle != NULL);
-				errcode = hilbert_kind_identify(dest, entry.pre, *destkindhandle);
+				errcode = hilbert_kind_identify_nocheck(dest, entry.pre, *destkindhandle);
+				assert ((errcode != HILBERT_ERR_INVALID_MODULE)
+						&& (errcode != HILBERT_ERR_IMMUTABLE)
+						&& (errcode != HILBERT_ERR_INVALID_HANDLE));
 				if (errcode != 0) {
 					eqc_backup_restore(dest, param->handle_map, backup);
 					goto iderror;
@@ -423,10 +426,117 @@ HilbertHandle hilbert_module_param(HilbertModule * restrict dest, HilbertModule 
 	}
 
 	size_t paramindex = hilbert_ivector_count(dest->paramhandles);
-	*errcode = load_kinds(dest, src, argv, mapper, &param->param, paramindex); // FIXME
+	*errcode = load_kinds(dest, src, argv, mapper, &param->param, paramindex);
 	if (*errcode != 0)
 		goto kindloaderror;
 	// FIXME: functors
+	
+	if (hilbert_ivector_pushback(dest->paramhandles, result) != 0) {
+		*errcode = HILBERT_ERR_NOMEM;
+		goto noparamhandlemem;
+	}
+
+	*errcode = set_dependency(dest, src);
+	if (*errcode != 0)
+		goto deperror;
+
+	goto success;
+
+deperror:
+noparamhandlemem:
+kindloaderror:;
+	size_t newcount = hilbert_ovector_count(dest->objects);
+	for (size_t i = oldcount + 1; i < newcount; ++i) { /* param is freed below */
+		hilbert_object_free(hilbert_ovector_get(dest->objects, i));
+	}
+	if (hilbert_ovector_downsize(dest->objects, oldcount) != 0)
+		*errcode = HILBERT_ERR_INTERNAL;
+noobjectmem:
+	hilbert_param_free(param);
+noparammem:
+argerror:
+immutable:
+success:
+	if (mtx_unlock(&src->mutex) != thrd_success)
+		*errcode = HILBERT_ERR_INTERNAL;
+nosrclock:
+	if (mtx_unlock(&dest->mutex) != thrd_success)
+		*errcode = HILBERT_ERR_INTERNAL;
+nodestlock:
+invalidmodule:
+	return result;
+}
+
+HilbertHandle hilbert_module_import(HilbertModule * restrict dest, HilbertModule * restrict src, size_t argc,
+		const HilbertHandle * restrict argv, HilbertMapperCallback mapper, int * restrict errcode) {
+	assert (dest != NULL);
+	assert (src != NULL);
+	assert ((argc == 0) || (argv != NULL));
+	assert ((argc == 0) || (mapper != NULL));
+	assert (errcode != NULL);
+
+	int rc;
+	HilbertHandle result = 0;
+
+	/* locking & sanity checks */
+	if (hilbert_module_gettype(dest) != HILBERT_PROOF_MODULE) {
+		*errcode = HILBERT_ERR_INVALID_MODULE;
+		goto invalidmodule;
+	}
+
+	if (hilbert_module_gettype(src) != HILBERT_INTERFACE_MODULE) {
+		*errcode = HILBERT_ERR_INVALID_MODULE;
+		goto invalidmodule;
+	}
+
+	if (mtx_lock(&dest->mutex) != thrd_success) {
+		*errcode = HILBERT_ERR_INTERNAL;
+		goto nodestlock;
+	}
+
+	if (mtx_lock(&src->mutex) != thrd_success) {
+		*errcode = HILBERT_ERR_INTERNAL;
+		goto nosrclock;
+	}
+
+	rc = hilbert_module_isimmutable(src, errcode);
+	if ((*errcode == 0) && (!rc))
+		*errcode = HILBERT_ERR_IMMUTABLE;
+	if (*errcode != 0)
+		goto immutable;
+
+	if (hilbert_ivector_count(src->paramhandles) != argc) {
+		*errcode = HILBERT_ERR_COUNT_MISMATCH;
+		goto argerror;
+	}
+
+	for (size_t i = 0; i != argc; ++i) {
+		if (hilbert_object_retrieve(dest, argv[i], HILBERT_TYPE_PARAM) == NULL) {
+			*errcode = HILBERT_ERR_INVALID_HANDLE;
+			goto argerror;
+		}
+	}
+
+	/* parameter creation and loading */
+	union Object * param = param_create(src);
+	if (param == NULL) {
+		*errcode = HILBERT_ERR_NOMEM;
+		goto noparammem;
+	}
+
+	size_t oldcount = hilbert_ovector_count(dest->objects);
+	result = oldcount;
+
+	if (hilbert_ovector_pushback(dest->objects, param) != 0) {
+		*errcode = HILBERT_ERR_NOMEM;
+		goto noobjectmem;
+	}
+
+	size_t paramindex = hilbert_ivector_count(dest->paramhandles);
+	*errcode = load_kinds(dest, src, argv, mapper, &param->param, paramindex);
+	if (*errcode != 0)
+		goto kindloaderror;
+	// FIXME: functors and statements
 	
 	if (hilbert_ivector_pushback(dest->paramhandles, result) != 0) {
 		*errcode = HILBERT_ERR_NOMEM;
