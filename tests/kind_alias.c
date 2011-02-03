@@ -30,20 +30,23 @@
 #include"hilbert.h"
 
 int main(void) {
-	HilbertModule * module;
-	HilbertHandle kind;
-	HilbertHandle alias;
 	int errcode;
 	int rc;
 
-	module = hilbert_module_create(HILBERT_INTERFACE_MODULE);
+	/* aliasing in interface modules */
+	HilbertModule * module = hilbert_module_create(HILBERT_INTERFACE_MODULE);
 	if (module == NULL) {
 		fputs("Unable to create Hilbert interface module\n", stderr);
 		exit(EXIT_FAILURE);
 	}
-	kind = hilbert_kind_create(module, &errcode);
+	HilbertHandle kind = hilbert_kind_create(module, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to create kind in interface module (error code=%d)\n", errcode);
+		exit(EXIT_FAILURE);
+	}
+	HilbertHandle alias = hilbert_kind_alias(module, 666, &errcode);
+	if (errcode != HILBERT_ERR_INVALID_HANDLE) {
+		fprintf(stderr, "Expected invalid handle error, got errcode=%d instead\n", errcode);
 		exit(EXIT_FAILURE);
 	}
 	alias = hilbert_kind_alias(module, kind, &errcode);
@@ -60,7 +63,59 @@ int main(void) {
 		fputs("Expected kind and its alias to be equivalent\n", stderr);
 		exit(EXIT_FAILURE);
 	}
+	errcode = hilbert_module_makeimmutable(module);
+	if (errcode != 0) {
+		fprintf(stderr, "Unable to make interface module immutable (errcode=%d)\n", errcode);
+		exit(EXIT_FAILURE);
+	}
+	alias = hilbert_kind_alias(module, kind, &errcode);
+	if (errcode != HILBERT_ERR_IMMUTABLE) {
+		fprintf(stderr, "Expected immutability error, got errcode=%d instead\n", errcode);
+		exit(EXIT_FAILURE);
+	}
 	hilbert_module_free(module);
 
-	// FIXME: Check with imported modules also
+	/* aliasing in proof modules */
+	HilbertModule * src = hilbert_module_create(HILBERT_INTERFACE_MODULE);
+	HilbertModule * dest = hilbert_module_create(HILBERT_PROOF_MODULE);
+	if ((src == NULL) || (dest == NULL)) {
+		fputs("Unable to create Hilbert modules\n", stderr);
+		exit(EXIT_FAILURE);
+	}
+	HilbertHandle skind = hilbert_kind_create(src, &errcode);
+	if (errcode != 0) {
+		fprintf(stderr, "Unable to create kind in src (errcode=%d)\n", errcode);
+		exit(EXIT_FAILURE);
+	}
+	errcode = hilbert_module_makeimmutable(src);
+	if (errcode != 0) {
+		fprintf(stderr, "Unable to make Hilbert module src immutable (errcode=%d)\n", errcode);
+		exit(EXIT_FAILURE);
+	}
+	HilbertHandle param = hilbert_module_import(dest, src, 0, NULL, NULL, &errcode);
+	if (errcode != 0) {
+		fprintf(stderr, "Unable to import src into dest (errcode=%d)\n", errcode);
+		exit(EXIT_FAILURE);
+	}
+	HilbertHandle dkind = hilbert_object_getdesthandle(dest, param, skind, &errcode);
+	if (errcode != 0) {
+		fprintf(stderr, "Unable to obtain dest kind (errcode=%d)\n", errcode);
+		exit(EXIT_FAILURE);
+	}
+	alias = hilbert_kind_alias(dest, dkind, &errcode);
+	if (errcode != 0) {
+		fprintf(stderr, "Unable to alias dest kind (errcode=%d)\n", errcode);
+		exit(EXIT_FAILURE);
+	}
+	rc = hilbert_kind_isequivalent(dest, dkind, alias, &errcode);
+	if (errcode != 0) {
+		fprintf(stderr, "Unable to check dest kind and alias for equivalence (errcode=%d)\n", errcode);
+		exit(EXIT_FAILURE);
+	}
+	if (!rc) {
+		fputs("Expected dest kind and its alias to be equivalent\n", stderr);
+		exit(EXIT_FAILURE);
+	}
+	hilbert_module_free(dest);
+	hilbert_module_free(src);
 }

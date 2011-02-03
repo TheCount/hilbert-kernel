@@ -168,7 +168,7 @@ int main(void) {
 	};
 	check_eq_matrix(module, handles, expected4);
 
-	// FIXME: Also check in proof modules through imports
+	/* Note: test for proof modules is contained in import.c */
 	
 	hilbert_module_free(module);
 }

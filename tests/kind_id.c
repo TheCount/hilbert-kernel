@@ -30,15 +30,56 @@
 #include"hilbert.h"
 
 int main(void) {
-	HilbertModule * module;
 	HilbertHandle kind1, kind2, kind3, kind4, kind5;
 	int errcode;
 
-	// FIXME: Also check ID failure in proof modules through imports
+	/*** Id failure in proof modules ***/
+	HilbertModule * src = hilbert_module_create(HILBERT_INTERFACE_MODULE);
+	HilbertModule * dest = hilbert_module_create(HILBERT_PROOF_MODULE);
+	if ((src == NULL) || (dest == NULL)) {
+		fputs("Unable to create Hilbert modules\n", stderr);
+		exit(EXIT_FAILURE);
+	}
+	kind1 = hilbert_kind_create(src, &errcode);
+	if (errcode != 0) {
+		fprintf(stderr, "Unable to create kind1 in src (errcode=%d)\n", errcode);
+		exit(EXIT_FAILURE);
+	}
+	kind2 = hilbert_kind_create(src, &errcode);
+	if (errcode != 0) {
+		fprintf(stderr, "Unable to create kind2 in src (errcode=%d)\n", errcode);
+		exit(EXIT_FAILURE);
+	}
+	errcode = hilbert_module_makeimmutable(src);
+	if (errcode != 0) {
+		fprintf(stderr, "Unable to make module src immutable (errcode=%d)\n", errcode);
+		exit(EXIT_FAILURE);
+	}
+	HilbertHandle param = hilbert_module_import(dest, src, 0, NULL, NULL, &errcode);
+	if (errcode != 0) {
+		fprintf(stderr, "Unable to import module src into dest (errcode=%d)\n", errcode);
+		exit(EXIT_FAILURE);
+	}
+	kind3 = hilbert_object_getdesthandle(dest, param, kind1, &errcode);
+	if (errcode != 0) {
+		fprintf(stderr, "Unable to obtain kind3 in dest (errcode=%d)\n", errcode);
+		exit(EXIT_FAILURE);
+	}
+	kind4 = hilbert_object_getdesthandle(dest, param, kind2, &errcode);
+	if (errcode != 0) {
+		fprintf(stderr, "Unable to obtain kind4 in dest (errcode=%d)\n", errcode);
+		exit(EXIT_FAILURE);
+	}
+	errcode = hilbert_kind_identify(dest, kind3, kind4);
+	if (errcode != HILBERT_ERR_INVALID_MODULE) {
+		fprintf(stderr, "Expected invalid module error, got errcode=%d\n", errcode);
+		exit(EXIT_FAILURE);
+	}
+	hilbert_module_free(src);
+	hilbert_module_free(dest);
 
 	/*** Id test in interface modules ***/
-
-	module = hilbert_module_create(HILBERT_INTERFACE_MODULE);
+	HilbertModule * module = hilbert_module_create(HILBERT_INTERFACE_MODULE);
 	if (module == NULL) {
 		fputs("Unable to create Hilbert interface module\n", stderr);
 		exit(EXIT_FAILURE);
