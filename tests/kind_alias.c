@@ -92,7 +92,7 @@ int main(void) {
 		fprintf(stderr, "Unable to make Hilbert module src immutable (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
-	HilbertHandle param = hilbert_module_import(dest, src, 0, NULL, NULL, &errcode);
+	HilbertHandle param = hilbert_module_import(dest, src, 0, NULL, NULL, NULL, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to import src into dest (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);

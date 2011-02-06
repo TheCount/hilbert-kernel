@@ -196,6 +196,7 @@ static void eqc_backup_free(EQCSet * backup) {
  * 	If the number of elements in the array does not match the number of parameters, the behaviour is undefined.
  * @param mapper Pointer to parameter handle to argument handle mapper function.
  * 	If the number of parameters is zero, <code>mapper</code> may be <code>NULL</code>.
+ * @param userdata Pointer to user-defined data passed as an argument to the userdata parameter of <code>mapper</code>.
  * @param param Pointer to the new parameter.
  * @param paramindex Index of the new parameter in <code>dest</code>.
  *
@@ -205,7 +206,7 @@ static void eqc_backup_free(EQCSet * backup) {
  * @return On success, <code>0</code> is returned. On error, a nonzero value is returned.
  */
 static int load_kinds(HilbertModule * restrict dest, HilbertModule * restrict src, const HilbertHandle * restrict argv,
-		HilbertMapperCallback mapper, struct Param * param, size_t paramindex) {
+		HilbertMapperCallback mapper, void * userdata, struct Param * param, size_t paramindex) {
 	assert (dest != NULL);
 	assert (src != NULL);
 	assert ((hilbert_ivector_count(src->paramhandles) == 0) || (argv != NULL));
@@ -229,7 +230,7 @@ static int load_kinds(HilbertModule * restrict dest, HilbertModule * restrict sr
 			/* map to existing kind */
 			struct ExternalKind * srckind = &srcobject->external_kind;
 			HilbertHandle arghandle = argv[srckind->paramindex];
-			HilbertHandle destkindhandle = mapper(dest, src, srckindhandle, &errcode);
+			HilbertHandle destkindhandle = mapper(dest, src, srckindhandle, userdata, &errcode);
 			if (errcode != 0)
 				goto error;
 			union Object * destobject = hilbert_object_retrieve(dest, destkindhandle, HILBERT_TYPE_KIND);
@@ -355,7 +356,7 @@ static int set_dependency(struct HilbertModule * dest, struct HilbertModule * sr
 }
 
 HilbertHandle hilbert_module_param(HilbertModule * restrict dest, HilbertModule * restrict src, size_t argc,
-		const HilbertHandle * restrict argv, HilbertMapperCallback mapper, int * restrict errcode) {
+		const HilbertHandle * restrict argv, HilbertMapperCallback mapper, void * userdata, int * restrict errcode) {
 	assert (dest != NULL);
 	assert (src != NULL);
 	assert ((argc == 0) || (argv != NULL));
@@ -426,7 +427,7 @@ HilbertHandle hilbert_module_param(HilbertModule * restrict dest, HilbertModule 
 	}
 
 	size_t paramindex = hilbert_ivector_count(dest->paramhandles);
-	*errcode = load_kinds(dest, src, argv, mapper, &param->param, paramindex);
+	*errcode = load_kinds(dest, src, argv, mapper, userdata, &param->param, paramindex);
 	if (*errcode != 0)
 		goto kindloaderror;
 	// FIXME: functors
@@ -468,7 +469,7 @@ invalidmodule:
 }
 
 HilbertHandle hilbert_module_import(HilbertModule * restrict dest, HilbertModule * restrict src, size_t argc,
-		const HilbertHandle * restrict argv, HilbertMapperCallback mapper, int * restrict errcode) {
+		const HilbertHandle * restrict argv, HilbertMapperCallback mapper, void * userdata, int * restrict errcode) {
 	assert (dest != NULL);
 	assert (src != NULL);
 	assert ((argc == 0) || (argv != NULL));
@@ -533,7 +534,7 @@ HilbertHandle hilbert_module_import(HilbertModule * restrict dest, HilbertModule
 	}
 
 	size_t paramindex = hilbert_ivector_count(dest->paramhandles);
-	*errcode = load_kinds(dest, src, argv, mapper, &param->param, paramindex);
+	*errcode = load_kinds(dest, src, argv, mapper, userdata, &param->param, paramindex);
 	if (*errcode != 0)
 		goto kindloaderror;
 	// FIXME: functors and statements

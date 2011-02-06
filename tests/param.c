@@ -51,7 +51,7 @@ static HilbertModule * dest;
 #define USER_ERROR  1
 
 /* identity callback */
-static HilbertHandle callback_id(HilbertModule * restrict dest, HilbertModule * restrict src, HilbertHandle srcObject, int * restrict errcode) {
+static HilbertHandle callback_id(HilbertModule * restrict dest, HilbertModule * restrict src, HilbertHandle srcObject, void * userdata, int * restrict errcode) {
 	if (dest == NULL) {
 		fputs("Destination module in callback is NULL\n", stderr);
 		exit(EXIT_FAILURE);
@@ -75,7 +75,7 @@ static HilbertHandle callback_id(HilbertModule * restrict dest, HilbertModule * 
 }
 
 /* invalid handle callback */
-static HilbertHandle callback_invalid_handle(HilbertModule * restrict dest, HilbertModule * restrict src, HilbertHandle srcObject, int * restrict errcode) {
+static HilbertHandle callback_invalid_handle(HilbertModule * restrict dest, HilbertModule * restrict src, HilbertHandle srcObject, void * userdata, int * restrict errcode) {
 	if (dest == NULL) {
 		fputs("Destination module in callback is NULL\n", stderr);
 		exit(EXIT_FAILURE);
@@ -93,7 +93,7 @@ static HilbertHandle callback_invalid_handle(HilbertModule * restrict dest, Hilb
 }
 
 /* clashing callback */
-static HilbertHandle callback_clash(HilbertModule * restrict dest, HilbertModule * restrict src, HilbertHandle srcObject, int * restrict errcode) {
+static HilbertHandle callback_clash(HilbertModule * restrict dest, HilbertModule * restrict src, HilbertHandle srcObject, void * userdata, int * restrict errcode) {
 	if (dest == NULL) {
 		fputs("Destination module in callback is NULL\n", stderr);
 		exit(EXIT_FAILURE);
@@ -111,7 +111,7 @@ static HilbertHandle callback_clash(HilbertModule * restrict dest, HilbertModule
 }
 
 /* user error callback */
-static HilbertHandle callback_error(HilbertModule * restrict dest, HilbertModule * restrict src, HilbertHandle srcObject, int * restrict errcode) {
+static HilbertHandle callback_error(HilbertModule * restrict dest, HilbertModule * restrict src, HilbertHandle srcObject, void * userdata, int * restrict errcode) {
 	if (dest == NULL) {
 		fputs("Destination module in callback is NULL\n", stderr);
 		exit(EXIT_FAILURE);
@@ -156,7 +156,7 @@ int main(void) {
 		fputs("Unable to create modules (src=proof, dest=proof)\n", stderr);
 		exit(EXIT_FAILURE);
 	}
-	param = hilbert_module_param(dest, src, 0, NULL, NULL, &errcode);
+	param = hilbert_module_param(dest, src, 0, NULL, NULL, NULL, &errcode);
 	if (errcode != HILBERT_ERR_INVALID_MODULE) {
 		fprintf(stderr, "Expected invalid module error (src=proof, dest=proof), got %d\n", errcode);
 		exit(EXIT_FAILURE);
@@ -167,7 +167,7 @@ int main(void) {
 		fputs("Unable to create module (src=proof, dest=interface)\n", stderr);
 		exit(EXIT_FAILURE);
 	}
-	param = hilbert_module_param(dest, src, 0, NULL, NULL, &errcode);
+	param = hilbert_module_param(dest, src, 0, NULL, NULL, NULL, &errcode);
 	if (errcode != HILBERT_ERR_INVALID_MODULE) {
 		fprintf(stderr, "Expected invalid module error (src=proof, dest=interface), got %d\n", errcode);
 		exit(EXIT_FAILURE);
@@ -180,7 +180,7 @@ int main(void) {
 		fputs("Unable to create modules (src=interface, dest=proof)\n", stderr);
 		exit(EXIT_FAILURE);
 	}
-	param = hilbert_module_param(dest, src, 0, NULL, NULL, &errcode);
+	param = hilbert_module_param(dest, src, 0, NULL, NULL, NULL, &errcode);
 	if (errcode != HILBERT_ERR_INVALID_MODULE) {
 		fprintf(stderr, "Expected invalid module error (src=interface, dest=proof), got %d\n", errcode);
 		exit(EXIT_FAILURE);
@@ -195,7 +195,7 @@ int main(void) {
 		fputs("Unable to create modules (src=interface, dest=interface)\n", stderr);
 		exit(EXIT_FAILURE);
 	}
-	param = hilbert_module_param(dest, src, 0, NULL, NULL, &errcode);
+	param = hilbert_module_param(dest, src, 0, NULL, NULL, NULL, &errcode);
 	if (errcode != HILBERT_ERR_IMMUTABLE) {
 		fprintf(stderr, "Expected mutability error (src=mutable, dest=mutable), got %d\n", errcode);
 		exit(EXIT_FAILURE);
@@ -205,7 +205,7 @@ int main(void) {
 		fprintf(stderr, "Unable to make destination module immutable (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
-	param = hilbert_module_param(dest, src, 0, NULL, NULL, &errcode);
+	param = hilbert_module_param(dest, src, 0, NULL, NULL, NULL, &errcode);
 	if (errcode != HILBERT_ERR_IMMUTABLE) {
 		fprintf(stderr, "Expected mutability error (src=mutable, dest=immutable), got %d\n", errcode);
 		exit(EXIT_FAILURE);
@@ -215,7 +215,7 @@ int main(void) {
 		fprintf(stderr, "Unable to make source module immutable (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
-	param = hilbert_module_param(dest, src, 0, NULL, NULL, &errcode);
+	param = hilbert_module_param(dest, src, 0, NULL, NULL, NULL, &errcode);
 	if (errcode != HILBERT_ERR_IMMUTABLE) {
 		fprintf(stderr, "Expected mutability error (src=immutable, dest=immutable), got %d\n", errcode);
 		exit(EXIT_FAILURE);
@@ -235,7 +235,7 @@ int main(void) {
 		fprintf(stderr, "Unable to make source module immutable (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
-	param = hilbert_module_param(dest, src, 0, NULL, NULL, &errcode);
+	param = hilbert_module_param(dest, src, 0, NULL, NULL, NULL, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to parameterise module (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
@@ -307,7 +307,7 @@ int main(void) {
 		fprintf(stderr, "Unable to identify kind6 with kind7 in src (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
-	HilbertHandle param1 = hilbert_module_param(src, src2, 0, NULL, NULL, &errcode);
+	HilbertHandle param1 = hilbert_module_param(src, src2, 0, NULL, NULL, NULL, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to parameterise module src with module src2 (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
@@ -446,7 +446,7 @@ int main(void) {
 		fprintf(stderr, "Unable to create kind9 in dest (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
-	HilbertHandle s2param = hilbert_module_param(dest, src2, 0, NULL, NULL, &errcode);
+	HilbertHandle s2param = hilbert_module_param(dest, src2, 0, NULL, NULL, NULL, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to parameterise Hilbert module dest with src2 (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
@@ -476,34 +476,34 @@ int main(void) {
 		fprintf(stderr, "Unable to obtain kind4 in dest (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
-	HilbertHandle sparam = hilbert_module_param(dest, src, 0, NULL, NULL, &errcode);
+	HilbertHandle sparam = hilbert_module_param(dest, src, 0, NULL, NULL, NULL, &errcode);
 	if (errcode != HILBERT_ERR_COUNT_MISMATCH) {
 		fprintf(stderr, "Expected count mismatch error, got errcode=%d instead\n", errcode);
 		exit(EXIT_FAILURE);
 	}
 	HilbertHandle argv[1] = { 666 };
-	sparam = hilbert_module_param(dest, src, 1, argv, callback_id, &errcode);
+	sparam = hilbert_module_param(dest, src, 1, argv, callback_id, NULL, &errcode);
 	if (errcode != HILBERT_ERR_INVALID_HANDLE) {
 		fprintf(stderr, "Expected invalid handle error, got errcode=%d instead\n", errcode);
 		exit(EXIT_FAILURE);
 	}
 	argv[0] = s2param;
-	sparam = hilbert_module_param(dest, src, 1, argv, callback_invalid_handle, &errcode);
+	sparam = hilbert_module_param(dest, src, 1, argv, callback_invalid_handle, NULL, &errcode);
 	if (errcode != HILBERT_ERR_INVALID_MAPPING) {
 		fprintf(stderr, "Expected invalid mapping error, got errcode=%d instead\n", errcode);
 		exit(EXIT_FAILURE);
 	}
-	sparam = hilbert_module_param(dest, src, 1, argv, callback_clash, &errcode);
+	sparam = hilbert_module_param(dest, src, 1, argv, callback_clash, NULL, &errcode);
 	if (errcode != HILBERT_ERR_MAPPING_CLASH) {
 		fprintf(stderr, "Expected mapping clash error, got errcode=%d instead\n", errcode);
 		exit(EXIT_FAILURE);
 	}
-	sparam = hilbert_module_param(dest, src, 1, argv, callback_error, &errcode);
+	sparam = hilbert_module_param(dest, src, 1, argv, callback_error, NULL, &errcode);
 	if (errcode != USER_ERROR) {
 		fprintf(stderr, "Expected user generated error, got errcode=%d instead\n", errcode);
 		exit(EXIT_FAILURE);
 	}
-	sparam = hilbert_module_param(dest, src, 1, argv, callback_id, &errcode);
+	sparam = hilbert_module_param(dest, src, 1, argv, callback_id, NULL, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to parameterise Hilbert module dest with src (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);

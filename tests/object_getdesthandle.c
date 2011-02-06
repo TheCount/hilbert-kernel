@@ -52,7 +52,7 @@ int main(void) {
 		fprintf(stderr, "Unable to make src immutable (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
-	param = hilbert_module_param(dest, src, 0, NULL, NULL, &errcode);
+	param = hilbert_module_param(dest, src, 0, NULL, NULL, NULL, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to parameterise dest with src (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);

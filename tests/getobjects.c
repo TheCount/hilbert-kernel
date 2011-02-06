@@ -89,7 +89,7 @@ int main(void) {
 		fprintf(stderr, "Unable to make module1 immutable (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
-	HilbertHandle param = hilbert_module_param(module2, module1, 0, NULL, NULL, &errcode);
+	HilbertHandle param = hilbert_module_param(module2, module1, 0, NULL, NULL, NULL, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to parameterise module2 with module1 (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);

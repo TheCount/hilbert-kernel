@@ -58,13 +58,14 @@ typedef size_t HilbertHandle;
  * @param dest pointer to a Hilbert module that is the target of a parameterisation, an import, or an export.
  * @param src pointer to a Hilbert module that is the source of a parameterisation, an import, or an export.
  * @param srcObject Hilbert handle of an object in <code>src</code> whose corresponding handle in <code>dest</code> is sought.
+ * @param userdata Pointer to user-defined data.
  * @param errcode pointer to an integer used to convey a user-defined error code.
  *
  * @return On error, the return value is unspecified and a user-defined positive error code is stored in <code>*errcode</code>.
  * 	It is required that a positive value be stored in <code>*errcode</code> as the Hilbert kernel library uses negative integers for error codes.
  * 	On success, <code>0</code> is stored in <code>*errcode</code>, and the object handle in <code>dest</code> corresponding to the object handle <code>srcObject</code> is returned.
  */
-typedef HilbertHandle (*HilbertMapperCallback)(HilbertModule * restrict dest, HilbertModule * restrict src, HilbertHandle srcObject, int * restrict errcode);
+typedef HilbertHandle (*HilbertMapperCallback)(HilbertModule * restrict dest, HilbertModule * restrict src, HilbertHandle srcObject, void * userdata, int * restrict errcode);
 
 /**
  * Error codes.
@@ -394,6 +395,7 @@ void hilbert_array_free(HilbertHandle * eqc);
  * @param mapper user-provided callback function mapping objects coming from the parameters of <code>src</code> to the argument objects.
  * 	The callback is only called for kinds and functors <!--FIXME--> external to <code>src</code>.
  * 	If <code>argc == 0</code>, this may be <code>NULL</code>.
+ * @param userdata Pointer to user-defined data. It is passed as an argument to the userdata parameter of <code>mapper</code>, and is otherwise ignored.
  * @param errcode pointer to an integer to convey an error code.
  *
  * @return On error, the return value is unspecified,
@@ -416,7 +418,7 @@ void hilbert_array_free(HilbertHandle * eqc);
  * 			The <code>mapper</code> callback function returned the same object handle for different source objects.
  * 	On success, <code>0</code> is stored in <code>*errcode</code>, and a handle for the new parameter is returned.
  */
-HilbertHandle hilbert_module_param(HilbertModule * restrict dest, HilbertModule * restrict src, size_t argc, const HilbertHandle * restrict argv, HilbertMapperCallback mapper, int * restrict errcode);
+HilbertHandle hilbert_module_param(HilbertModule * restrict dest, HilbertModule * restrict src, size_t argc, const HilbertHandle * restrict argv, HilbertMapperCallback mapper, void * userdata, int * restrict errcode);
 
 /**
  * Imports a Hilbert interface module into a Hilbert proof module.
@@ -429,6 +431,7 @@ HilbertHandle hilbert_module_param(HilbertModule * restrict dest, HilbertModule 
  * @param mapper User-provided callback function mapping objects coming from the parameters of the module pointed to by <code>src</code> to the argument objects.
  * 	The callback is only called for kinds, functors <!--FIXME--> and statements <!--FIXME--> external to the module pointed to by <code>src</code>.
  * 	If <code>argc == 0</code>, this may be <code>NULL</code>.
+ * @param userdata Pointer to user-defined data. It is passed as an argument to the userdata parameter of <code>mapper</code>, and is otherwise ignored.
  * @param errcode Pointer to an integer to convey an error code.
  *
  * @return On error, the return value is unspecified
@@ -451,7 +454,7 @@ HilbertHandle hilbert_module_param(HilbertModule * restrict dest, HilbertModule 
  * 			The <code>mapper</code> callback function returned the same object handle for different source objects.
  * 	On success, <code>0</code> is stored in <code>*errcode</code>, and a handle for the new parameter is returned.
  */
-HilbertHandle hilbert_module_import(HilbertModule * restrict dest, HilbertModule * restrict src, size_t argc, const HilbertHandle * restrict argv, HilbertMapperCallback mapper, int * restrict errcode);
+HilbertHandle hilbert_module_import(HilbertModule * restrict dest, HilbertModule * restrict src, size_t argc, const HilbertHandle * restrict argv, HilbertMapperCallback mapper, void * userdata, int * restrict errcode);
 
 /**
  * Returns all objects of a Hilbert module.
