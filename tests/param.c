@@ -46,6 +46,11 @@ static HilbertHandle dkinds[N_DKINDS];
 static HilbertModule * dest;
 
 /**
+ * User data for testing.
+ */
+static int USERDATATEST = 12345;
+
+/**
  * User error codes.
  */
 #define USER_ERROR  1
@@ -58,6 +63,10 @@ static HilbertHandle callback_id(HilbertModule * restrict dest, HilbertModule * 
 	}
 	if (src == NULL) {
 		fputs("Source module in callback is NULL\n", stderr);
+		exit(EXIT_FAILURE);
+	}
+	if (*(int *) userdata != USERDATATEST) {
+		fprintf(stderr, "Received invalid user data %p\n", userdata);
 		exit(EXIT_FAILURE);
 	}
 	if (errcode == NULL) {
@@ -482,7 +491,7 @@ int main(void) {
 		exit(EXIT_FAILURE);
 	}
 	HilbertHandle argv[1] = { 666 };
-	sparam = hilbert_module_param(dest, src, 1, argv, callback_id, NULL, &errcode);
+	sparam = hilbert_module_param(dest, src, 1, argv, callback_id, &USERDATATEST, &errcode);
 	if (errcode != HILBERT_ERR_INVALID_HANDLE) {
 		fprintf(stderr, "Expected invalid handle error, got errcode=%d instead\n", errcode);
 		exit(EXIT_FAILURE);
@@ -503,7 +512,7 @@ int main(void) {
 		fprintf(stderr, "Expected user generated error, got errcode=%d instead\n", errcode);
 		exit(EXIT_FAILURE);
 	}
-	sparam = hilbert_module_param(dest, src, 1, argv, callback_id, NULL, &errcode);
+	sparam = hilbert_module_param(dest, src, 1, argv, callback_id, &USERDATATEST, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to parameterise Hilbert module dest with src (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
