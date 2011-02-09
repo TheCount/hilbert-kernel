@@ -1,0 +1,1 @@
+* Should we accept kind mapping clashs on param/import/export when the clashing kinds are equivalent?
