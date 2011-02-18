@@ -20,4 +20,5 @@
 #     on wiki : http://www.wikiproofs.org/w/index.php?title=User_talk:GrafZahl
 #
 
+ACLOCAL_AMFLAGS=-I m4
 SUBDIRS = src/ tests/

@@ -21,6 +21,7 @@ dnl    on wiki : http://www.wikiproofs.org/w/index.php?title=User_talk:GrafZahl
 dnl
 
 AC_INIT([hilbert-kernel], [0.1], [Graf.Zahl@gmx.net])
+AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/hilbert.h])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror])
