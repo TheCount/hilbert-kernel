@@ -21,6 +21,7 @@
  */
 
 #include"private.h"
+#include"param.h"
 
 #include<stdlib.h>
 
@@ -30,31 +31,6 @@
 #include"cl/mset.h"
 
 #include"threads/hthreads.h"
-
-/**
- * Creates a parameter with empty handle map.
- *
- * @param src Pointer to source module.
- *
- * @return On success, a pointer to the newly created parameter is returned.
- * 	On error, <code>NULL</code> is returned.
- */
-static union Object * param_create(struct HilbertModule * src) {
-	union Object * result = malloc(sizeof(*result));
-	if (result == NULL)
-		goto noparammem;
-
-	result->param = (struct Param) { .type = HILBERT_TYPE_PARAM, .module = src, .handle_map = hilbert_pmap_new() };
-	if (result->param.handle_map == NULL)
-		goto nomapmem;
-
-	return result;
-
-nomapmem:
-	free(result);
-noparammem:
-	return NULL;
-}
 
 /**
  * Creates a backup of existing kind equivalence classes.
@@ -321,38 +297,6 @@ error:
 	hilbert_iset_del(already_handled);
 noahsetmem:
 	return errcode;
-}
-
-/**
- * Sets a dependency between two modules,
- * such that the destination module depends on the source module,
- * and the source module reverse-depends on the destination module.
- *
- * @param dest Pointer to the destination module, assumed to be locked.
- * @param src Pointer to the source module, assumed to be locked.
- *
- * @return On success, <code>0</code> is returned.
- * 	On error, a negative value is returned, which may be one of the following error codes:
- * 		- <code>#HILBERT_ERR_NOMEM</code>:
- * 			There was not enough memory to perform the operation.
- */
-static int set_dependency(struct HilbertModule * dest, struct HilbertModule * src) {
-	assert (src != NULL);
-	assert (dest != NULL);
-
-	int contains_dep  = hilbert_mset_contains(dest->dependencies, src);
-	int contains_rdep = hilbert_mset_contains(src->reverse_dependencies, dest);
-
-	if ((!contains_dep) && (hilbert_mset_add(dest->dependencies, src) != 0))
-		return HILBERT_ERR_NOMEM;
-
-	if ((!contains_rdep) && (hilbert_mset_add(src->reverse_dependencies, dest) != 0)) {
-		if (!contains_dep)
-			hilbert_mset_remove(dest->dependencies, src);
-		return HILBERT_ERR_NOMEM;
-	}
-
-	return 0;
 }
 
 HilbertHandle hilbert_module_param(HilbertModule * restrict dest, HilbertModule * restrict src, size_t argc,
