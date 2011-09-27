@@ -52,14 +52,14 @@ typedef size_t HilbertHandle;
 #define HILBERT_HANDLE_MAX SIZE_MAX
 
 /**
- * Function pointer type for mapping an objects between modules.
+ * Function pointer type for mapping objects between modules.
  * It is required by library functions responsible for parameterising, importing, and exporting Hilbert interface modules.
  *
- * @param dest pointer to a Hilbert module that is the target of a parameterisation, an import, or an export.
- * @param src pointer to a Hilbert module that is the source of a parameterisation, an import, or an export.
+ * @param dest Pointer to a Hilbert module that is the target of a parameterisation, an import, or an export.
+ * @param src Pointer to a Hilbert module that is the source of a parameterisation, an import, or an export.
  * @param srcObject Hilbert handle of an object in <code>src</code> whose corresponding handle in <code>dest</code> is sought.
  * @param userdata Pointer to user-defined data.
- * @param errcode pointer to an integer used to convey a user-defined error code.
+ * @param errcode Pointer to an integer used to convey a user-defined error code.
  *
  * @return On error, the return value is unspecified and a user-defined positive error code is stored in <code>*errcode</code>.
  * 	It is required that a positive value be stored in <code>*errcode</code> as the Hilbert kernel library uses negative integers for error codes.
@@ -227,8 +227,8 @@ int hilbert_module_makeimmutable(HilbertModule * module);
 /**
  * Checks whether a Hilbert module is immutable.
  *
- * @param module pointer to a code>#HilbertModule</code> previously returned by a successful call to <code>#hilbert_module_create()</code>.
- * @param errcode valid pointer to an integer used to convey an error code.
+ * @param module Pointer to a code>#HilbertModule</code> previously returned by a successful call to <code>#hilbert_module_create()</code>.
+ * @param errcode Pointer to an integer used to convey an error code.
  *
  * @return On error, a negative value is stored in <code>*errcode</code> and the return value is unspecified.
  * 	On success, <code>0</code> is stored in <code>*errcode</code>, and the return value is as follows.
@@ -283,9 +283,9 @@ int hilbert_module_getancillary(HilbertModule * module, void ** data);
  * Creates a new Hilbert kind in the specified interface module.
  *
  * @param module Pointer to a Hilbert interface module.
- * @param errcode valid pointer to an integer used to convey an error code.
+ * @param errcode Pointer to an integer used to convey an error code.
  *
- * @return On success, <code>0</code> is stored in <code>*errocode</code> and a handle for the new kind is returned.
+ * @return On success, <code>0</code> is stored in <code>*errcode</code> and a handle for the new kind is returned.
  * 	On error, the return value is unspecified,
  * 	and a negative value is stored in <code>*errcode</code>, which may be one of the following error codes:
  * 		- <code>#HILBERT_ERR_NOMEM</code>:
@@ -301,9 +301,9 @@ HilbertHandle hilbert_kind_create(HilbertModule * restrict module, int * restric
  * Creates an alias of an existing Hilbert kind.
  * The new alias kind will be equivalent to the specified kind.
  *
- * @param module pointer to a Hilbert module.
- * @param kind kind handle of a kind in <code>module</code>.
- * @param errcode valid pointer to an integer used to convey an error code.
+ * @param module Pointer to a Hilbert module.
+ * @param kind Kind handle of a kind in <code>module</code>.
+ * @param errcode Pointer to an integer used to convey an error code.
  *
  * @return On success, <code>0</code> is stored in <code>*errcode</code> and a handle for the new alias kind is returned.
  * 	On error, the return value is unspecified,
@@ -322,9 +322,9 @@ HilbertHandle hilbert_kind_alias(HilbertModule * restrict module, HilbertHandle 
  * If the two specified kinds are already equivalent (for example, if they are equal),
  * no operation is performed.
  *
- * @param module pointer to a Hilbert interface module.
- * @param kind1 kind handle of a kind in <code>module</code>.
- * @param kind2 kind handle of a kind in <code>module</code>.
+ * @param module Pointer to a Hilbert interface module.
+ * @param kind1 Kind handle of a kind in <code>module</code>.
+ * @param kind2 Kind handle of a kind in <code>module</code>.
  *
  * @return On success, <code>0</code> is returned.
  * 	On error, a negative value is returned, which may be one of the following error codes:
@@ -342,10 +342,10 @@ int hilbert_kind_identify(HilbertModule * module, HilbertHandle kind1, HilbertHa
 /**
  * Checks whether two Hilbert kinds are equivalent.
  *
- * @param module pointer to a Hilbert module.
- * @param kind1 kind handle of a kind in <code>module</code>.
- * @param kind2 kind handle of a kind in <code>module</code>.
- * @param errcode pointer to an integer to convey an error code.
+ * @param module Pointer to a Hilbert module.
+ * @param kind1 Kind handle of a kind in <code>module</code>.
+ * @param kind2 Kind handle of a kind in <code>module</code>.
+ * @param errcode Pointer to an integer to convey an error code.
  *
  * @return On error, the return value is unspeified and a negative value is stored in <code>*errcode</code>,
  * 	which may be one of the following error codes:
@@ -364,10 +364,10 @@ int hilbert_kind_isequivalent(HilbertModule * restrict module, HilbertHandle kin
  * The returned equivalence class is only a snapshot corresponding to the current state of the underlying module.
  * It does not reflect subsequent changes to the module.
  *
- * @param module pointer to a Hilbert module.
- * @param kind kind handle of a kind in <code>module</code>.
- * @param count pointer to a <code>size_t</code> to convey the number of elements in the equivalence class.
- * @param errcode pointer to an integer to convey an error code.
+ * @param module Pointer to a Hilbert module.
+ * @param kind Kind handle of a kind in <code>module</code>.
+ * @param count Pointer to a <code>size_t</code> to convey the number of elements in the equivalence class.
+ * @param errcode Pointer to an integer to convey an error code.
  *
  * @return On error, <code>NULL</code> is returned, the value of <code>*count</count> is unspecified,
  * 	and a negative value is stored in <code>*errcode</code>, which may be one of the following error codes:
@@ -386,23 +386,23 @@ HilbertHandle * hilbert_kind_equivalenceclass(HilbertModule * restrict module, H
  * Frees an array of Hilbert handles previously returned by a Hilbert Kernel library function,
  * releasing any resources associated with it.
  *
- * @param eqc pointer previously returned by a Hilbert Kernel library function.
+ * @param eqc Pointer previously returned by a Hilbert Kernel library function.
  */
 void hilbert_array_free(HilbertHandle * eqc);
 
 /**
  * Parameterises a Hilbert interface module with another Hilbert interface module.
  *
- * @param dest pointer to a Hilbert module.
- * @param src pointer to a Hilbert module different from the module pointed to by <code>dest</code>.
- * @param argc number of parameter arguments. Must match the number of parameters of <code>src</code>.
- * @param argv pointer to an array of parameter handles serving as arguments to <code>src</code>.
+ * @param dest Pointer to a Hilbert module.
+ * @param src Pointer to a Hilbert module different from the module pointed to by <code>dest</code>.
+ * @param argc Number of parameter arguments. Must match the number of parameters of <code>src</code>.
+ * @param argv Pointer to an array of parameter handles serving as arguments to <code>src</code>.
  * 	If <code>argc == 0</code>, this may be <code>NULL</code>.
- * @param mapper user-provided callback function mapping objects coming from the parameters of <code>src</code> to the argument objects.
+ * @param mapper User-provided callback function mapping objects coming from the parameters of <code>src</code> to the argument objects.
  * 	The callback is only called for kinds and functors <!--FIXME--> external to <code>src</code>.
  * 	If <code>argc == 0</code>, this may be <code>NULL</code>.
  * @param userdata Pointer to user-defined data. It is passed as an argument to the userdata parameter of <code>mapper</code>, and is otherwise ignored.
- * @param errcode pointer to an integer to convey an error code.
+ * @param errcode Pointer to an integer to convey an error code.
  *
  * @return On error, the return value is unspecified,
  * 	and a nonzero value is stored in <code>*errcode</code>. A positive value is a user-defined error code indicating an error which has occurred within <code>mapper</code>.
@@ -536,9 +536,9 @@ HilbertHandle * hilbert_module_getobjects(HilbertModule * restrict module, size_
 /**
  * Returns the type flags of the object with the specified handle.
  *
- * @param module pointer to a Hilbert module.
- * @param object object handle of an object in <code>module</code>.
- * @param errcode pointer to a location where an integer error code can be stored.
+ * @param module Pointer to a Hilbert module.
+ * @param object Object handle of an object in <code>module</code>.
+ * @param errcode Pointer to a location where an integer error code can be stored.
  *
  * @return On error, a negative value is stored in <code>*errcode</code> and the return value is unspecified.
  * 	<code>*errcode</code> may be one of the following error codes:
