@@ -25,6 +25,7 @@
 
 #include"private.h"
 
+#include<assert.h>
 #include<stdlib.h>
 
 #include"cl/pmap.h"
@@ -67,7 +68,7 @@ noparammem:
  * 		- <code>#HILBERT_ERR_NOMEM</code>:
  * 			There was not enough memory to perform the operation.
  */
-static inline int set_dependency(struct HilbertModule * dest, struct HilbertModule * src) {
+static inline int set_dependency(struct HilbertModule * restrict dest, struct HilbertModule * restrict src) {
 	assert (src != NULL);
 	assert (dest != NULL);
 
