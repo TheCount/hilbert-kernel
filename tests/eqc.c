@@ -87,7 +87,7 @@ int main(void) {
 		exit(EXIT_FAILURE);
 	}
 	if (count != 2) {
-		fprintf(stderr, "Expected kind 2, 3 equivalence clcass to have size 2, got %zu\n", count);
+		fprintf(stderr, "Expected kind 2, 3 equivalence class to have size 2, got %zu\n", count);
 		exit(EXIT_FAILURE);
 	}
 	if (((kind2 != eqc[0]) && (kind2 != eqc[1])) || ((kind3 != eqc[0]) && (kind3 != eqc[1]))) {
@@ -110,7 +110,7 @@ int main(void) {
 		exit(EXIT_FAILURE);
 	}
 	if (count != 3) {
-		fprintf(stderr, "Expected kind 1, 2, 3 equivalence clcass to have size 3, gotv %zu\n", count);
+		fprintf(stderr, "Expected kind 1, 2, 3 equivalence class to have size 3, got %zu\n", count);
 		exit(EXIT_FAILURE);
 	}
 	if (((kind1 != eqc[0]) && (kind1 != eqc[1]) && (kind1 != eqc[2]))
