@@ -23,6 +23,7 @@
 #include"private.h"
 #include"param.h"
 
+#include<assert.h>
 #include<stdlib.h>
 
 #include"cl/pmap.h"
@@ -69,7 +70,7 @@ static int export_kinds(struct HilbertModule * restrict dest, struct HilbertModu
 		if (errcode != 0)
 			goto error;
 		union Object * destobject = hilbert_object_retrieve(dest, destkindhandle, HILBERT_TYPE_KIND);
-		if (destobject == NULL) {
+		if ((destobject == NULL) || ((srcobject->kind.type ^ destobject->kind.type) & HILBERT_TYPE_VKIND)) {
 			errcode = HILBERT_ERR_INVALID_MAPPING;
 			goto error;
 		}

@@ -23,6 +23,7 @@
 #include"private.h"
 #include"param.h"
 
+#include<assert.h>
 #include<stdlib.h>
 
 #include"cl/pmap.h"
@@ -225,6 +226,7 @@ static int load_kinds(HilbertModule * restrict dest, HilbertModule * restrict sr
 				errcode = HILBERT_ERR_MAPPING_CLASH;
 				goto error;
 			}
+			assert (((srckind->type ^ destkind->type) & HILBERT_TYPE_VKIND) == 0);
 			if (hilbert_pmap_add(param->handle_map, destkindhandle, srckindhandle) != 0) {
 				errcode = HILBERT_ERR_NOMEM;
 				goto error;
@@ -247,7 +249,7 @@ static int load_kinds(HilbertModule * restrict dest, HilbertModule * restrict sr
 				goto error;
 			}
 			destkind->external_kind = (struct ExternalKind) {
-				.type = HILBERT_TYPE_KIND | HILBERT_TYPE_EXTERNAL,
+				.type = srcobject->generic.type | HILBERT_TYPE_EXTERNAL,
 				.equivalence_class = NULL,
 				.paramindex = paramindex
 			};

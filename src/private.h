@@ -23,6 +23,8 @@
 #ifndef HILBERT_PRIVATE_H__
 #define HILBERT_PRIVATE_H__
 
+#include<assert.h>
+
 #include"hilbert.h"
 
 #include"cl/pmap.h"
@@ -48,7 +50,7 @@ struct Generic {
  */
 struct Kind {
 	/**
-	 * Kind type (#HILBERT_TYPE_KIND set).
+	 * Kind type (#HILBERT_TYPE_KIND and possibly #HILBERT_TYPE_VKIND set).
 	 */
 	unsigned int type;
 
@@ -64,7 +66,7 @@ struct Kind {
  */
 struct ExternalKind {
 	/**
-	 * External kind type (#HILBERT_TYPE_KIND | #HILBERT_TYPE_EXTERNAL)
+	 * External kind type (#HILBERT_TYPE_KIND | #HILBERT_TYPE_EXTERNAL), and possibly #HILBERT_TYPE_VKIND.
 	 */
 	unsigned int type;
 
@@ -140,7 +142,9 @@ static inline void hilbert_object_free(union Object * object) {
 	unsigned int type = object->generic.type;
 	switch (type) {
 		case HILBERT_TYPE_KIND:
+		case HILBERT_TYPE_KIND | HILBERT_TYPE_VKIND:
 		case HILBERT_TYPE_KIND | HILBERT_TYPE_EXTERNAL:
+		case HILBERT_TYPE_KIND | HILBERT_TYPE_VKIND | HILBERT_TYPE_EXTERNAL:
 			hilbert_kind_free(object);
 			break;
 		case HILBERT_TYPE_PARAM:
@@ -253,7 +257,7 @@ static inline int hilbert_kind_identify_nocheck(struct HilbertModule * module, H
 
 	union Object * object1 = hilbert_object_retrieve(module, kindhandle1, HILBERT_TYPE_KIND);
 	union Object * object2 = hilbert_object_retrieve(module, kindhandle2, HILBERT_TYPE_KIND);
-	if ((object1 == NULL) || (object2 == NULL)) {
+	if ((object1 == NULL) || (object2 == NULL) || ((object1->kind.type ^ object2->kind.type) & HILBERT_TYPE_VKIND)) {
 		errcode = HILBERT_ERR_INVALID_HANDLE;
 		goto invalidhandle;
 	}

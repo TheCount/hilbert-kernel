@@ -165,6 +165,13 @@ typedef HilbertHandle (*HilbertMapperCallback)(HilbertModule * restrict dest, Hi
 #define HILBERT_TYPE_PARAM    0x0004u
 
 /**
+ * Flag to indicate that the corresponding object is a variable kind,
+ * that is, a kind which cannot be the resultant type of a functor application.
+ * This flag requires <code>#HILBERT_TYPE_KIND</code>, and is mutually exclusive with <code>#HILBERT_TYPE_PARAM</code>.
+ */
+#define HILBERT_TYPE_VKIND    0x0008u
+
+/**
  * Creates a new Hilbert module.
  *
  * @param type The type of the module. Can be one of the following:
@@ -298,8 +305,27 @@ int hilbert_module_getancillary(HilbertModule * module, void ** data);
 HilbertHandle hilbert_kind_create(HilbertModule * restrict module, int * restrict errcode);
 
 /**
+ * Creates a new Hilbert variable kind in the specified interface module.
+ *
+ * @param module Pointer to a Hilbert interface module.
+ * @param errcode Pointer to an integer used to convey an error code.
+ *
+ * @return On success, <code>0</code> is stored in <code>*errcode</code> and a handle for the new variable kind is returned.
+ * 	On error, the return value is unspecified,
+ * 	and a negative value is stored in <code>*errcode</code>, which may be one of the following error codes:
+ * 		- <code>#HILBERT_ERR_NOMEM</code>:
+ * 			There was not enough memory to create the new variable kind.
+ * 		- <code>#HILBERT_ERR_INVALID_MODULE</code>:
+ * 			The module pointed to by <code>module</code> is a proof module.
+ * 		- <code>#HILBERT_ERR_IMMUTABLE</code>:
+ * 			The module pointed to by <code>module</code> is immutable.
+ */
+HilbertHandle hilbert_vkind_create(HilbertModule * restrict module, int * restrict errcode);
+
+/**
  * Creates an alias of an existing Hilbert kind.
  * The new alias kind will be equivalent to the specified kind.
+ * It will be a variable kind if and only if the existing kind is also a variable kind.
  *
  * @param module Pointer to a Hilbert module.
  * @param kind Kind handle of a kind in <code>module</code>.
@@ -335,7 +361,8 @@ HilbertHandle hilbert_kind_alias(HilbertModule * restrict module, HilbertHandle 
  * 		- <code>#HILBERT_ERR_IMMUTABLE</code>:
  * 			The module specified by <code>module</code> is immutable.
  * 		- <code>#HILBERT_ERR_INVALID_HANDLE</code>:
- * 			At least one of <code>kind1</code> and <code>kind2</code> is not a valid kind handle.
+ * 			At least one of <code>kind1</code> and <code>kind2</code> is not a valid kind handle,
+ * 			or exactly one of <code>kind1</code> and <code>kind2</code> is a variable kind handle.
  */
 int hilbert_kind_identify(HilbertModule * module, HilbertHandle kind1, HilbertHandle kind2);
 
@@ -548,6 +575,8 @@ HilbertHandle * hilbert_module_getobjects(HilbertModule * restrict module, size_
  * 	and a bitwise OR of one or more of the following flags is returned:
  * 		- <code>#HILBERT_TYPE_KIND</code>:
  * 			The object specified by <code>object</code> is a kind.
+ * 		- <code>#HILBERT_TYPE_VKIND</code>:
+ * 			The kind specified by <code>object</code> is a variable kind.
  * 		- <code>#HILBERT_TYPE_PARAM</code>:
  * 			The object specified by <code>object</code> is a parameter.
  * 		- <code>#HILBERT_TYPE_EXTERNAL</code>:

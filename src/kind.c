@@ -22,6 +22,7 @@
 
 #include"private.h"
 
+#include<assert.h>
 #include<stdlib.h>
 
 #include"cl/iset.h"
@@ -30,7 +31,10 @@
 
 #include"threads/hthreads.h"
 
-HilbertHandle hilbert_kind_create(struct HilbertModule * restrict module, int * restrict errcode) {
+/**
+ * Implements #hilbert_kind_create() or #hilbert_vkind_create() by type.
+ */
+static HilbertHandle kind_create_by_type(struct HilbertModule * restrict module, int * restrict errcode, unsigned int type) {
 	assert (module != NULL);
 	assert (errcode != NULL);
 
@@ -61,7 +65,7 @@ HilbertHandle hilbert_kind_create(struct HilbertModule * restrict module, int * 
 		*errcode = HILBERT_ERR_NOMEM;
 		goto nokindmem;
 	}
-	object->kind = (struct Kind) { .type = HILBERT_TYPE_KIND, .equivalence_class = NULL };
+	object->kind = (struct Kind) { .type = type, .equivalence_class = NULL };
 
 	result = hilbert_ovector_count(module->objects);
 	if (result > HILBERT_HANDLE_MAX) {
@@ -98,6 +102,14 @@ invalid_module:
 	return result;
 }
 
+HilbertHandle hilbert_kind_create(HilbertModule * restrict module, int * restrict errcode) {
+	return kind_create_by_type(module, errcode, HILBERT_TYPE_KIND);
+}
+
+HilbertHandle hilbert_vkind_create(HilbertModule * restrict module, int * restrict errcode) {
+	return kind_create_by_type(module, errcode, HILBERT_TYPE_KIND | HILBERT_TYPE_VKIND);
+}
+
 HilbertHandle hilbert_kind_alias(HilbertModule * restrict module, HilbertHandle kindhandle, int * restrict errcode) {
 	assert (module != NULL);
 	assert (errcode != NULL);
@@ -123,13 +135,13 @@ HilbertHandle hilbert_kind_alias(HilbertModule * restrict module, HilbertHandle 
 		*errcode = HILBERT_ERR_NOMEM;
 		goto nokindmem;
 	}
-	newobject->kind.type = HILBERT_TYPE_KIND;
 
 	union Object * object = hilbert_object_retrieve(module, kindhandle, HILBERT_TYPE_KIND);
 	if (object == NULL) {
 		*errcode = HILBERT_ERR_INVALID_HANDLE;
 		goto wronghandle;
 	}
+	newobject->kind.type = object->kind.type;
 
 	IndexSet * equivalence_class;
 	if (object->kind.equivalence_class != NULL) {
