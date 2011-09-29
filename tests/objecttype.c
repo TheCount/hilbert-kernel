@@ -33,7 +33,7 @@ int main(void) {
 	HilbertModule * module;
 	HilbertHandle object, object2;
 	int errcode;
-	unsigned int type;
+	unsigned int type, type2;
 
 	module = hilbert_module_create(HILBERT_INTERFACE_MODULE);
 	if (module == NULL) {
@@ -47,6 +47,7 @@ int main(void) {
 		exit(EXIT_FAILURE);
 	}
 
+	/* kinds */
 	object = hilbert_kind_create(module, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to create kind in interface module (error code=%d)\n", errcode);
@@ -57,7 +58,7 @@ int main(void) {
 		fprintf(stderr, "Unable to obtain kind type (error code=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
-	if (!(type & HILBERT_TYPE_KIND)) {
+	if ((!(type & HILBERT_TYPE_KIND)) || (type & HILBERT_TYPE_VKIND)) {
 		fprintf(stderr, "Expected kind type, got 0x%4X\n", type);
 		exit(EXIT_FAILURE);
 	}
@@ -67,13 +68,44 @@ int main(void) {
 		fprintf(stderr, "Unable to alias kind in interface module (error code=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
-	type = hilbert_object_gettype(module, object2, &errcode);
+	type2 = hilbert_object_gettype(module, object2, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to obtain alias kind type (error code=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
-	if (!(type & HILBERT_TYPE_KIND)) {
-		fprintf(stderr, "Expected alias kind type, got 0x%4X\n", type);
+	if ((!(type2 & HILBERT_TYPE_KIND)) || (type2 & HILBERT_TYPE_VKIND)) {
+		fprintf(stderr, "Expected alias kind type, got 0x%4X\n", type2);
+		exit(EXIT_FAILURE);
+	}
+
+	/* variable kinds */
+	object = hilbert_vkind_create(module, &errcode);
+	if (errcode != 0) {
+		fprintf(stderr, "Unable to create variable kind in interface module (error code=%d)\n", errcode);
+		exit(EXIT_FAILURE);
+	}
+	type = hilbert_object_gettype(module, object, &errcode);
+	if (errcode != 0) {
+		fprintf(stderr, "Unable to obtain variable kind type (error code=%d)\n", errcode);
+		exit(EXIT_FAILURE);
+	}
+	if ((!(type & HILBERT_TYPE_KIND)) || (!(type & HILBERT_TYPE_VKIND))) {
+		fprintf(stderr, "Expected variable kind type, got 0x%4X\n", type);
+		exit(EXIT_FAILURE);
+	}
+
+	object2 = hilbert_kind_alias(module, object, &errcode);
+	if (errcode != 0) {
+		fprintf(stderr, "Unable to alias variable kind in interface module (error code=%d)\n", errcode);
+		exit(EXIT_FAILURE);
+	}
+	type2 = hilbert_object_gettype(module, object2, &errcode);
+	if (errcode != 0) {
+		fprintf(stderr, "Unable to obtain alias kind type (error code=%d)\n", errcode);
+		exit(EXIT_FAILURE);
+	}
+	if ((!(type2 & HILBERT_TYPE_KIND)) || (!(type2 & HILBERT_TYPE_VKIND))) {
+		fprintf(stderr, "Expected alias kind type, got 0x%4X\n", type2);
 		exit(EXIT_FAILURE);
 	}
 

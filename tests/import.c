@@ -240,9 +240,9 @@ int main(void) {
 		fputs("Unable to create modules for three-module-test\n", stderr);
 		exit(EXIT_FAILURE);
 	}
-	s2kinds[0] = hilbert_kind_create(src2, &errcode);
+	s2kinds[0] = hilbert_vkind_create(src2, &errcode);
 	if (errcode != 0) {
-		fprintf(stderr, "Unable to create kind0 in src2 (errcode=%d)\n", errcode);
+		fprintf(stderr, "Unable to create variable kind0 in src2 (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
 	s2kinds[1] = hilbert_kind_create(src2, &errcode);
@@ -281,14 +281,14 @@ int main(void) {
 		fprintf(stderr, "Unable to create kind5 in src (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
-	skinds[6] = hilbert_kind_create(src, &errcode);
+	skinds[6] = hilbert_vkind_create(src, &errcode);
 	if (errcode != 0) {
-		fprintf(stderr, "Unable to create kind6 in src (errcode=%d)\n", errcode);
+		fprintf(stderr, "Unable to create variable kind6 in src (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
-	skinds[7] = hilbert_kind_create(src, &errcode);
+	skinds[7] = hilbert_vkind_create(src, &errcode);
 	if (errcode != 0) {
-		fprintf(stderr, "Unable to create kind7 in src (errcode=%d)\n", errcode);
+		fprintf(stderr, "Unable to create variable kind7 in src (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
 	errcode = hilbert_kind_identify(src, skinds[6], skinds[7]);

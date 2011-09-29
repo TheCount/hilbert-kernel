@@ -79,7 +79,11 @@ static HilbertHandle callback_invalid_handle(HilbertModule * restrict dest, Hilb
 static HilbertHandle callback_clash(HilbertModule * restrict dest, HilbertModule * restrict src, HilbertHandle srcObject, void * userdata, int * restrict errcode) {
 	assert ((dest != NULL) && (src != NULL) && (errcode != NULL));
 	*errcode = 0;
-	return dkinds[0];
+	if ((srcObject == s2kinds[0]) || (srcObject == s2kinds[1]) || (srcObject == s2kinds[6])) { // careful to avoid clash preemption by invalid (v)kind mapping
+		return dkinds[0];
+	} else {
+		return dkinds[2];
+	}
 }
 
 /* user error callback */
@@ -176,9 +180,9 @@ int main(void) {
 	src1 = hilbert_module_create(HILBERT_INTERFACE_MODULE);
 	src2 = hilbert_module_create(HILBERT_INTERFACE_MODULE);
 	assert ((src1 != NULL) && (src2 != NULL));
-	s1kinds[0] = hilbert_kind_create(src1, &errcode);
+	s1kinds[0] = hilbert_vkind_create(src1, &errcode);
 	assert (errcode == 0);
-	s1kinds[1] = hilbert_kind_create(src1, &errcode);
+	s1kinds[1] = hilbert_vkind_create(src1, &errcode);
 	assert (errcode == 0);
 	errcode = hilbert_kind_identify(src1, s1kinds[0], s1kinds[1]);
 	assert (errcode == 0);
@@ -202,7 +206,7 @@ int main(void) {
 	assert (errcode == 0);
 	errcode = hilbert_kind_identify(src2, s2kinds[4], s2kinds[5]);
 	assert (errcode == 0);
-	s2kinds[6] = hilbert_kind_create(src2, &errcode);
+	s2kinds[6] = hilbert_vkind_create(src2, &errcode);
 	errcode = hilbert_kind_identify(src2, s2kinds[0], s2kinds[6]);
 	assert (errcode == 0);
 	errcode = hilbert_module_makeimmutable(src2);
@@ -223,7 +227,7 @@ int main(void) {
 	assert (errcode == 0);
 	dkinds[4] = hilbert_kind_create(src3, &errcode);
 	assert (errcode == 0);
-	HilbertHandle s3kindfake = hilbert_kind_create(src3, &errcode);
+	HilbertHandle s3kindfake = hilbert_vkind_create(src3, &errcode);
 	assert (errcode == 0);
 	errcode = hilbert_module_makeimmutable(src3);
 	assert (errcode == 0);
