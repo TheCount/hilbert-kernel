@@ -63,6 +63,10 @@ HilbertModule * hilbert_module_create(enum HilbertModuleType type) {
 	if (module->kindhandles == NULL)
 		goto nokindhandlesmem;
 
+	module->varhandles = hilbert_ivector_new();
+	if (module->varhandles == NULL)
+		goto novarhandlesmem;
+
 	module->paramhandles = hilbert_ivector_new();
 	if (module->paramhandles == NULL)
 		goto noparamhandlesmem;
@@ -82,6 +86,8 @@ noreversedepmem:
 nodepmem:
 	hilbert_ivector_del(module->paramhandles);
 noparamhandlesmem:
+	hilbert_ivector_del(module->varhandles);
+novarhandlesmem:
 	hilbert_ivector_del(module->kindhandles);
 nokindhandlesmem:
 	hilbert_ovector_del(module->objects);
@@ -154,6 +160,7 @@ void hilbert_module_free(struct HilbertModule * module) {
 	hilbert_mset_del(module->reverse_dependencies);
 	hilbert_mset_del(module->dependencies);
 	hilbert_ivector_del(module->paramhandles);
+	hilbert_ivector_del(module->varhandles);
 	hilbert_ivector_del(module->kindhandles);
 	hilbert_ovector_del(module->objects);
 	mtx_destroy(&module->mutex);

@@ -83,6 +83,21 @@ struct ExternalKind {
 };
 
 /**
+ * Variable.
+ */
+struct Variable {
+	/**
+	 * Variable type (#HILBERT_TYPE_VAR)
+	 */
+	unsigned int type;
+
+	/**
+	 * Kind of variable.
+	 */
+	HilbertHandle kind;
+};
+
+/**
  * Parameter.
  */
 struct Param {
@@ -109,6 +124,7 @@ union Object {
 	struct Generic generic;
 	struct Kind kind;
 	struct ExternalKind external_kind;
+	struct Variable var;
 	struct Param param;
 };
 
@@ -120,6 +136,15 @@ union Object {
 static inline void hilbert_kind_free(union Object * kind) {
 	/* kind->equivalence_class handled in hilbert_module_free() */
 	free(kind);
+}
+
+/**
+ * Frees a variable.
+ *
+ * @param var Pointer to a previously allocated variable.
+ */
+static inline void hilbert_var_free(union Object * var) {
+	free(var);
 }
 
 /**
@@ -146,6 +171,9 @@ static inline void hilbert_object_free(union Object * object) {
 		case HILBERT_TYPE_KIND | HILBERT_TYPE_EXTERNAL:
 		case HILBERT_TYPE_KIND | HILBERT_TYPE_VKIND | HILBERT_TYPE_EXTERNAL:
 			hilbert_kind_free(object);
+			break;
+		case HILBERT_TYPE_VAR:
+			hilbert_var_free(object);
 			break;
 		case HILBERT_TYPE_PARAM:
 			hilbert_param_free(object);
@@ -195,6 +223,11 @@ struct HilbertModule {
 	 * Kind handles.
 	 */
 	IndexVector * kindhandles;
+
+	/**
+	 * Variable handles.
+	 */
+	IndexVector * varhandles;
 
 	/**
 	 * Parameter handles.

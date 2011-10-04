@@ -144,13 +144,13 @@ typedef HilbertHandle (*HilbertMapperCallback)(HilbertModule * restrict dest, Hi
 
 /**
  * Flag to indicate that the corresponding object is derived from another object external to the module.
- * This flag is mutually exclusive with <code>#HILBERT_TYPE_PARAM</code>.
+ * This flag is mutually exclusive with <code>#HILBERT_TYPE_PARAM</code> and <code>#HILBERT_TYPE_VAR</code>.
  */
 #define HILBERT_TYPE_EXTERNAL 0x0001u
 
 /**
  * Flag to indicate that the corresponding object is a kind.
- * This flag is mutually exclusive with <code>#HILBERT_TYPE_PARAM</code>.
+ * This flag is mutually exclusive with <code>#HILBERT_TYPE_PARAM</code> and <code>#HILBERT_TYPE_VAR</code>.
  *
  * @sa #hilbert_kind_create()
  */
@@ -158,7 +158,7 @@ typedef HilbertHandle (*HilbertMapperCallback)(HilbertModule * restrict dest, Hi
 
 /**
  * Flag to indicate that the corresponding object is a parameter.
- * This flag is mutually exclusive with <code>#HILBERT_TYPE_EXTERNAL</code> and <code>#HILBERT_TYPE_KIND</code>.
+ * This flag is mutually exclusive with <code>#HILBERT_TYPE_EXTERNAL</code>, <code>#HILBERT_TYPE_VAR</code> and <code>#HILBERT_TYPE_KIND</code>.
  *
  * @sa #hilbert_module_param()
  */
@@ -167,9 +167,15 @@ typedef HilbertHandle (*HilbertMapperCallback)(HilbertModule * restrict dest, Hi
 /**
  * Flag to indicate that the corresponding object is a variable kind,
  * that is, a kind which cannot be the resultant type of a functor application.
- * This flag requires <code>#HILBERT_TYPE_KIND</code>, and is mutually exclusive with <code>#HILBERT_TYPE_PARAM</code>.
+ * This flag requires <code>#HILBERT_TYPE_KIND</code>, and is mutually exclusive with <code>#HILBERT_TYPE_PARAM</code> and <code>#HILBERT_TYPE_VAR</code>.
  */
 #define HILBERT_TYPE_VKIND    0x0008u
+
+/**
+ * Flag to indicate that the corresponding object is a variable.
+ * This flag is mutually exclusive with <code>#HILBERT_TYPE_EXTERNAL</code>, <code>#HILBERT_TYPE_KIND</code>, <code>#HILBERT_TYPE_PARAM</code> and <code>#HILBERT_TYPE_VKIND</code>.
+ */
+#define HILBERT_TYPE_VAR      0x0010u
 
 /**
  * Creates a new Hilbert module.
@@ -416,6 +422,42 @@ HilbertHandle * hilbert_kind_equivalenceclass(HilbertModule * restrict module, H
  * @param eqc Pointer previously returned by a Hilbert Kernel library function.
  */
 void hilbert_array_free(HilbertHandle * eqc);
+
+/**
+ * Creates a new variable of the specified kind in the specified module.
+ *
+ * @param module Pointer to a Hilbert module.
+ * @param kind Kind handle.
+ * @param errcode Pointer to an integer to convey an error code.
+ *
+ * @return On error, the return value is unspecified, and a negative value is stored in <code>*errcode</code>,
+ * 	which may be one of the following error codes:
+ * 		- <code>#HILBERT_ERR_NOMEM</code>:
+ * 			There was not enough memory available to create the new variable.
+ * 		- <code>#HILBERT_ERR_INVALID_HANDLE</code>:
+ * 			<code>kind</code> is not a valid kind handle.
+ * 		- <code>#HILBERT_ERR_IMMUTABLE</code>:
+ * 			The specified module is immutable.
+ * 	On success, <code>0</code> is stored in <code>*errcode</code>, and a handle for the new variable is returned.
+ *
+ * @sa #hilbert_module_isimmutable()
+ */
+HilbertHandle hilbert_var_create(HilbertModule * restrict module, HilbertHandle kind, int * restrict errcode);
+
+/**
+ * Returns the kind of a variable.
+ *
+ * @param module Pointer to a Hilbert module.
+ * @param var Variable handle.
+ * @param errcode Pointer to an integer to convey an error code.
+ *
+ * @return On error, the return value is unspecified, and a negative value is stored in <code>errcode</code>,
+ * 	which may be one of the following error codes:
+ * 		- <code>#HILBERT_ERR_INVALID_HANDLE</code>:
+ * 			<code>var</code> is not a valid variable handle for <code>module</code>.
+ * 	On success, <code>0</code> is stored in <code>*errcode</code>, and a handle for the kind of the variable (or an equivalent kind) is returned.
+ */
+HilbertHandle hilbert_var_getkind(HilbertModule * restrict module, HilbertHandle var, int * restrict errcode);
 
 /**
  * Parameterises a Hilbert interface module with another Hilbert interface module.
