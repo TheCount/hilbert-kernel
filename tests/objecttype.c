@@ -24,6 +24,7 @@
  * Test to check object types.
  */
 
+#include<assert.h>
 #include<stdio.h>
 #include<stdlib.h>
 
@@ -74,7 +75,7 @@ int main(void) {
 		exit(EXIT_FAILURE);
 	}
 	if ((!(type2 & HILBERT_TYPE_KIND)) || (type2 & HILBERT_TYPE_VKIND)) {
-		fprintf(stderr, "Expected alias kind type, got 0x%4X\n", type2);
+		fprintf(stderr, "Expected alias kind type, got 0x%04X\n", type2);
 		exit(EXIT_FAILURE);
 	}
 
@@ -90,7 +91,7 @@ int main(void) {
 		exit(EXIT_FAILURE);
 	}
 	if ((!(type & HILBERT_TYPE_KIND)) || (!(type & HILBERT_TYPE_VKIND))) {
-		fprintf(stderr, "Expected variable kind type, got 0x%4X\n", type);
+		fprintf(stderr, "Expected variable kind type, got 0x%04X\n", type);
 		exit(EXIT_FAILURE);
 	}
 
@@ -105,7 +106,20 @@ int main(void) {
 		exit(EXIT_FAILURE);
 	}
 	if ((!(type2 & HILBERT_TYPE_KIND)) || (!(type2 & HILBERT_TYPE_VKIND))) {
-		fprintf(stderr, "Expected alias kind type, got 0x%4X\n", type2);
+		fprintf(stderr, "Expected alias kind type, got 0x%04X\n", type2);
+		exit(EXIT_FAILURE);
+	}
+
+	/* variables */
+	object = hilbert_var_create(module, object2, &errcode);
+	assert (errcode == 0);
+	type = hilbert_object_gettype(module, object, &errcode);
+	if (errcode != 0) {
+		fprintf(stderr, "Unable to obtain type of variable object (errcode=%d)\n", errcode);
+		exit(EXIT_FAILURE);
+	}
+	if (!(type & HILBERT_TYPE_VAR)) {
+		fprintf(stderr, "Expected variable type, got 0x%04X\n", type);
 		exit(EXIT_FAILURE);
 	}
 

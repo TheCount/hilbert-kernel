@@ -24,6 +24,7 @@
  * Test for hilbert_object_getdesthandle()
  */
 
+#include<assert.h>
 #include<stdio.h>
 #include<stdlib.h>
 
@@ -32,7 +33,7 @@
 int main(void) {
 	HilbertModule * src;
 	HilbertModule * dest;
-	HilbertHandle skind, dkind, param, handle;
+	HilbertHandle skind, dkind, var, param, handle;
 	size_t size;
 	int errcode;
 
@@ -47,6 +48,8 @@ int main(void) {
 		fprintf(stderr, "Unable to create source kind (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
+	var = hilbert_var_create(src, skind, &errcode);
+	assert (errcode == 0);
 	errcode = hilbert_module_makeimmutable(src);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to make src immutable (errcode=%d)\n", errcode);
@@ -90,7 +93,11 @@ int main(void) {
 		fprintf(stderr, "Expected invalid object handle error, got errcode=%d instead\n", errcode);
 		exit(EXIT_FAILURE);
 	}
-	// FIXME: test with an object that has no destination
+	handle = hilbert_object_getdesthandle(dest, param, var, &errcode);
+	if (errcode != HILBERT_ERR_INVALID_HANDLE) {
+		fprintf(stderr, "Expected invalid object handle error for variable handle, got errcode=%d instead\n", errcode);
+		exit(EXIT_FAILURE);
+	}
 	handle = hilbert_object_getdesthandle(dest, param, skind, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to obtain dest handle (errcode=%d)\n", errcode);
