@@ -310,8 +310,11 @@ HilbertHandle * hilbert_kind_equivalenceclass(struct HilbertModule * restrict mo
 
 nomem:
 wronghandle:
-	if (mtx_unlock(&module->mutex) != thrd_success)
+	if (mtx_unlock(&module->mutex) != thrd_success) {
 		*errcode = HILBERT_ERR_INTERNAL;
+		free(result);
+		result = NULL;
+	}
 nolock:
 	return result;
 }
