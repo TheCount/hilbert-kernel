@@ -25,8 +25,6 @@
 #include<assert.h>
 #include<stdlib.h>
 
-void hilbert_array_free(HilbertHandle * eqc) {
-	assert (eqc != NULL);
-
-	free(eqc);
+void hilbert_array_free(HilbertHandle * handle_array) {
+	free(handle_array);
 }
