@@ -78,7 +78,7 @@ int main(void) {
 	find_object(objects, 2, var1);
 	find_object(objects, 3, var2);
 	find_object(objects, 4, functor);
-	hilbert_array_free(objects);
+	hilbert_harray_free(objects);
 	hilbert_module_free(module);
 
 	/* two module test */
@@ -149,7 +149,7 @@ int main(void) {
 				(unsigned int) kind1, (unsigned int) srckind);
 		exit(EXIT_FAILURE);
 	}
-	hilbert_array_free(objects);
+	hilbert_harray_free(objects);
 	hilbert_module_free(module1);
 	hilbert_module_free(module2);
 }

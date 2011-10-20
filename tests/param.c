@@ -385,7 +385,7 @@ int main(void) {
 		fprintf(stderr, "Wrong equivalence class size for kind0 in src (expected=1, got=%zu)\n", count);
 		exit(EXIT_FAILURE);
 	}
-	hilbert_array_free(eqc);
+	hilbert_harray_free(eqc);
 	eqc = hilbert_kind_equivalenceclass(src, skinds[1], &count, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to obtain equivalence class of kind1 in src (errcode=%d)\n", stderr);
@@ -395,7 +395,7 @@ int main(void) {
 		fprintf(stderr, "Wrong equivalence class size for kind1 in src (expected=2, got=%zu)\n", count);
 		exit(EXIT_FAILURE);
 	}
-	hilbert_array_free(eqc);
+	hilbert_harray_free(eqc);
 	eqc = hilbert_kind_equivalenceclass(src, skinds[3], &count, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to obtain equivalence class of kind3 in src (errcode=%d)\n", stderr);
@@ -405,7 +405,7 @@ int main(void) {
 		fprintf(stderr, "Wrong equivalence class size for kind3 in src (expected=1, got=%zu)\n", count);
 		exit(EXIT_FAILURE);
 	}
-	hilbert_array_free(eqc);
+	hilbert_harray_free(eqc);
 	eqc = hilbert_kind_equivalenceclass(src, skinds[4], &count, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to obtain equivalence class of kind4 in src (errcode=%d)\n", stderr);
@@ -415,7 +415,7 @@ int main(void) {
 		fprintf(stderr, "Wrong equivalence class size for kind4 in src (expected=1, got=%zu)\n", count);
 		exit(EXIT_FAILURE);
 	}
-	hilbert_array_free(eqc);
+	hilbert_harray_free(eqc);
 	eqc = hilbert_kind_equivalenceclass(src, skinds[5], &count, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to obtain equivalence class of kind5 in src (errcode=%d)\n", stderr);
@@ -425,7 +425,7 @@ int main(void) {
 		fprintf(stderr, "Wrong equivalence class size for kind5 in src (expected=1, got=%zu)\n", count);
 		exit(EXIT_FAILURE);
 	}
-	hilbert_array_free(eqc);
+	hilbert_harray_free(eqc);
 	eqc = hilbert_kind_equivalenceclass(src, skinds[6], &count, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to obtain equivalence class of kind6 in src (errcode=%d)\n", stderr);
@@ -435,7 +435,7 @@ int main(void) {
 		fprintf(stderr, "Wrong equivalence class size for kind6 in src (expected=2, got=%zu)\n", count);
 		exit(EXIT_FAILURE);
 	}
-	hilbert_array_free(eqc);
+	hilbert_harray_free(eqc);
 	errcode = hilbert_kind_identify(src, skinds[0], skinds[6]);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to identify kind0 with kind6 in src (errcode=%d)\n", errcode);
@@ -579,7 +579,7 @@ int main(void) {
 		fprintf(stderr, "Constant functor nonzero input kind count (count=%zu)\n", count);
 		exit(EXIT_FAILURE);
 	}
-	hilbert_array_free(ikinds);
+	hilbert_harray_free(ikinds);
 	rkind = hilbert_functor_getkind(dest, df3, &errcode);
 	assert (errcode == 0);
 	if (rkind != dkinds[1]) {
@@ -596,7 +596,7 @@ int main(void) {
 		fputs("Functor has wrong input kinds\n", stderr);
 		exit(EXIT_FAILURE);
 	}
-	hilbert_array_free(ikinds);
+	hilbert_harray_free(ikinds);
 	hilbert_module_free(src);
 	hilbert_module_free(src2);
 	hilbert_module_free(dest);

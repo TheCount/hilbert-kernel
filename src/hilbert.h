@@ -425,9 +425,9 @@ HilbertHandle * hilbert_kind_equivalenceclass(HilbertModule * restrict module, H
  * Frees an array of Hilbert handles previously returned by a Hilbert Kernel library function,
  * releasing any resources associated with it.
  *
- * @param eqc Pointer previously returned by a Hilbert Kernel library function.
+ * @param handle_array Pointer previously returned by a Hilbert Kernel library function.
  */
-void hilbert_array_free(HilbertHandle * eqc);
+void hilbert_harray_free(HilbertHandle * handle_array);
 
 /**
  * Creates a new variable of the specified kind in the specified module.
@@ -522,7 +522,7 @@ HilbertHandle hilbert_functor_getkind(HilbertModule * restrict module, HilbertHa
  * 	and a pointer to an array of size <code>*size</code> containing the input kind handles in proper order is returned.
  * 	The returned array should be freed by the user once it is no longer needed.
  *
- * @sa #hilbert_array_free()
+ * @sa #hilbert_harray_free()
  */
 HilbertHandle * hilbert_functor_getinputkinds(HilbertModule * restrict module, HilbertHandle functor, size_t * restrict size, int * restrict errcode);
 
@@ -663,9 +663,9 @@ HilbertHandle hilbert_module_export(HilbertModule * restrict dest, HilbertModule
  * 	created simultaneously in an atomic operation (such as a parameterisation), they adhere to the order with
  * 	respect to the other handles, but among themselves, the order is unspecified.
  * 	The returned array only corresponds to the current state of the module.
- * 	It can be freed with <code>#hilbert_array_free()</code>.
+ * 	It can be freed with <code>#hilbert_harray_free()</code>.
  *
- * @sa #hilbert_array_free()
+ * @sa #hilbert_harray_free()
  */
 HilbertHandle * hilbert_module_getobjects(HilbertModule * restrict module, size_t * restrict size, int * restrict errcode);
 

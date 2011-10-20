@@ -77,7 +77,7 @@ int main(void) {
 			break;
 		}
 	}
-	hilbert_array_free(dobjects);
+	hilbert_harray_free(dobjects);
 	handle = hilbert_object_getdesthandle(dest, 666, skind, &errcode);
 	if (errcode != HILBERT_ERR_INVALID_HANDLE) {
 		fprintf(stderr, "Expected invalid parameter handle error, got errcode=%d instead\n", errcode);

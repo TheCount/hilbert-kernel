@@ -57,7 +57,7 @@ int main(void) {
 		fprintf(stderr, "Expected constant functor in interface module to have zero input kinds, received %zu\n", size);
 		exit(EXIT_FAILURE);
 	}
-	hilbert_array_free(ikinds);
+	hilbert_harray_free(ikinds);
 	HilbertHandle ikindarray[2] = { kind, vkind };
 	HilbertHandle f2 = hilbert_functor_create(imodule, kind, 2, ikindarray, &errcode);
 	assert (errcode == 0);
@@ -74,7 +74,7 @@ int main(void) {
 		fprintf(stderr, "Got back wrong input kinds in interface module (expected: {%u, %u}, got: {%u, %u})\n", (unsigned int) kind, (unsigned int) vkind, (unsigned int) ikinds[0], (unsigned int) ikinds[1]);
 		exit(EXIT_FAILURE);
 	}
-	hilbert_array_free(ikinds);
+	hilbert_harray_free(ikinds);
 
 	/* in proof modules */
 	HilbertModule * pmodule = hilbert_module_create(HILBERT_PROOF_MODULE);
@@ -100,7 +100,7 @@ int main(void) {
 		fprintf(stderr, "Expected constant functor in proof module to have zero input kinds, received %zu\n", size);
 		exit(EXIT_FAILURE);
 	}
-	hilbert_array_free(ikinds);
+	hilbert_harray_free(ikinds);
 	ikinds = hilbert_functor_getinputkinds(pmodule, f2, &size, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to obtain input kinds from functor in proof module (errcode=%d)\n", errcode);
@@ -117,7 +117,7 @@ int main(void) {
 
 	hilbert_module_free(imodule);
 	hilbert_module_free(pmodule);
-	hilbert_array_free(ikinds);
+	hilbert_harray_free(ikinds);
 
 	// FIXME: Other types of functors
 }

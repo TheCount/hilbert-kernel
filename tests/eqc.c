@@ -67,7 +67,7 @@ int main(void) {
 		fprintf(stderr, "Expected equivalence class to contain kind1, got { %u }\n", (unsigned int) eqc[0]);
 		exit(EXIT_FAILURE);
 	}
-	hilbert_array_free(eqc);
+	hilbert_harray_free(eqc);
 	/* aliased kinds */
 	kind2 = hilbert_kind_create(module, &errcode);
 	if (errcode != 0) {
@@ -95,7 +95,7 @@ int main(void) {
 				(unsigned int) eqc[0], (unsigned int) eqc[1]);
 		exit(EXIT_FAILURE);
 	}
-	hilbert_array_free(eqc);
+	hilbert_harray_free(eqc);
 	/* all together now */
 	errcode = hilbert_kind_identify(module, kind1, kind2);
 	if (errcode != 0) {
@@ -120,6 +120,6 @@ int main(void) {
 				(unsigned int) eqc[0], (unsigned int) eqc[1], (unsigned int) eqc[2]);
 		exit(EXIT_FAILURE);
 	}
-	hilbert_array_free(eqc);
+	hilbert_harray_free(eqc);
 	hilbert_module_free(module);
 }
