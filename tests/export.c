@@ -50,6 +50,7 @@ static int USERDATATEST = 32154;
 HilbertHandle s1kinds[N_S1KINDS];
 HilbertHandle s2kinds[N_S2KINDS];
 HilbertHandle dkinds[N_DKINDS];
+HilbertHandle s2f0, s1f0, df0, s2f2, df2; /* functor handles */
 
 /* identity callback */
 static HilbertHandle callback_id(HilbertModule * restrict dest, HilbertModule * restrict src, HilbertHandle srcObject, void * userdata, int * restrict errcode) {
@@ -58,12 +59,15 @@ static HilbertHandle callback_id(HilbertModule * restrict dest, HilbertModule * 
 		fprintf(stderr, "Received invalid user data %p\n", userdata);
 		exit(EXIT_FAILURE);
 	}
+	*errcode = 0;
 	for (size_t i = 0; i != N_S2KINDS; ++i) {
-		if (s2kinds[i] == srcObject) {
-			*errcode = 0;
+		if (s2kinds[i] == srcObject)
 			return dkinds[i];
-		}
 	}
+	if (s2f0 == srcObject)
+		return df0;
+	if (s2f2 == srcObject)
+		return df2;
 	fprintf(stderr, "Got invalid source object %u\n", (unsigned int) srcObject);
 	exit(EXIT_FAILURE);
 }
@@ -188,6 +192,8 @@ int main(void) {
 	assert (errcode == 0);
 	s1kinds[2] = hilbert_kind_create(src1, &errcode);
 	assert (errcode == 0);
+	s1f0 = hilbert_functor_create(src1, s1kinds[2], 0, NULL, &errcode);
+	assert (errcode == 0);
 	errcode = hilbert_module_makeimmutable(src1);
 	assert (errcode == 0);
 	s2kinds[3] = hilbert_kind_create(src2, &errcode);
@@ -209,6 +215,10 @@ int main(void) {
 	s2kinds[6] = hilbert_vkind_create(src2, &errcode);
 	errcode = hilbert_kind_identify(src2, s2kinds[0], s2kinds[6]);
 	assert (errcode == 0);
+	s2f2 = hilbert_functor_create(src2, s2kinds[4], 2, &s2kinds[3], &errcode);
+	assert (errcode == 0);
+	s2f0 = hilbert_object_getdesthandle(src2, param2, s1f0, &errcode);
+	assert (errcode == 0);
 	errcode = hilbert_module_makeimmutable(src2);
 	assert (errcode == 0);
 	dest = hilbert_module_create(HILBERT_PROOF_MODULE);
@@ -221,6 +231,8 @@ int main(void) {
 	assert (errcode == 0);
 	dkinds[2] = hilbert_object_getdesthandle(dest, s1param, s1kinds[2], &errcode);
 	assert (errcode == 0);
+	df0 = hilbert_object_getdesthandle(dest, s1param, s1f0, &errcode);
+	assert (errcode == 0);
 	HilbertModule * src3 = hilbert_module_create(HILBERT_INTERFACE_MODULE);
 	assert (src3 != NULL);
 	dkinds[3] = hilbert_kind_create(src3, &errcode);
@@ -228,6 +240,15 @@ int main(void) {
 	dkinds[4] = hilbert_kind_create(src3, &errcode);
 	assert (errcode == 0);
 	HilbertHandle s3kindfake = hilbert_vkind_create(src3, &errcode);
+	assert (errcode == 0);
+	HilbertHandle df2real = hilbert_functor_create(src3, dkinds[4], 2, &dkinds[3], &errcode);
+	assert (errcode == 0);
+	HilbertHandle df2fake1 = hilbert_functor_create(src3, dkinds[3], 2, &dkinds[3], &errcode);
+	assert (errcode == 0);
+	HilbertHandle df2fake2 = hilbert_functor_create(src3, dkinds[4], 1, &dkinds[3], &errcode);
+	assert (errcode == 0);
+	HilbertHandle fake_ikinds[2] = { dkinds[4], dkinds[3] };
+	HilbertHandle df2fake3 = hilbert_functor_create(src3, dkinds[4], 2, fake_ikinds, &errcode);
 	assert (errcode == 0);
 	errcode = hilbert_module_makeimmutable(src3);
 	assert (errcode == 0);
@@ -239,8 +260,20 @@ int main(void) {
 	assert (errcode == 0);
 	dkinds[5] = hilbert_kind_alias(dest, dkinds[4], &errcode);
 	assert (errcode == 0);
-	dkinds[6] = hilbert_object_getdesthandle(dest, s3param, s3kindfake, &errcode); /* introduce fake */
+	HilbertHandle dkinds6real = hilbert_kind_alias(dest, dkinds[0], &errcode);
 	assert (errcode == 0);
+	HilbertHandle dkinds6fake = hilbert_object_getdesthandle(dest, s3param, s3kindfake, &errcode);
+	assert (errcode == 0);
+	dkinds[6] = dkinds6real; 
+	df2real = hilbert_object_getdesthandle(dest, s3param, df2real, &errcode);
+	assert (errcode == 0);
+	df2fake1 = hilbert_object_getdesthandle(dest, s3param, df2fake1, &errcode);
+	assert (errcode == 0);
+	df2fake2 = hilbert_object_getdesthandle(dest, s3param, df2fake2, &errcode);
+	assert (errcode == 0);
+	df2fake3 = hilbert_object_getdesthandle(dest, s3param, df2fake3, &errcode);
+	assert (errcode == 0);
+	df2 = df2real;
 	HilbertHandle argv[1] = { s1param };
 	HilbertHandle s2param = hilbert_module_export(dest, src2, 1, argv, callback_invalid_handle, &USERDATATEST, &errcode);
 	if (errcode != HILBERT_ERR_INVALID_MAPPING) {
@@ -257,13 +290,32 @@ int main(void) {
 		fprintf(stderr, "Expected user error, got errcode=%d instead\n", errcode);
 		exit(EXIT_FAILURE);
 	}
+	dkinds[6] = dkinds6fake;
 	s2param = hilbert_module_export(dest, src2, 1, argv, callback_id, &USERDATATEST, &errcode);
 	if (errcode != HILBERT_ERR_NO_EQUIVALENCE) {
 		fprintf(stderr, "Expected missing equivalence error, got errcode=%d instead\n", errcode);
 		exit(EXIT_FAILURE);
 	}
-	dkinds[6] = hilbert_kind_alias(dest, dkinds[0], &errcode);
-	assert (errcode == 0);
+	dkinds[6] = dkinds6real;
+	df2 = df2fake1;
+	s2param = hilbert_module_export(dest, src2, 1, argv, callback_id, &USERDATATEST, &errcode);
+	if (errcode != HILBERT_ERR_INVALID_MAPPING) {
+		fprintf(stderr, "Expected invalid mapping error for wrong result kind, got errcode=%d instead\n", errcode);
+		exit(EXIT_FAILURE);
+	}
+	df2 = df2fake2;
+	s2param = hilbert_module_export(dest, src2, 1, argv, callback_id, &USERDATATEST, &errcode);
+	if (errcode != HILBERT_ERR_INVALID_MAPPING) {
+		fprintf(stderr, "Expected invalid mapping error for wrong place count, got errcode=%d instead\n", errcode);
+		exit(EXIT_FAILURE);
+	}
+	df2 = df2fake3;
+	s2param = hilbert_module_export(dest, src2, 1, argv, callback_id, &USERDATATEST, &errcode);
+	if (errcode != HILBERT_ERR_INVALID_MAPPING) {
+		fprintf(stderr, "Expected invalid mapping error for wrong input kinds, got errcode=%d instead\n", errcode);
+		exit(EXIT_FAILURE);
+	}
+	df2 = df2real;
 	s2param = hilbert_module_export(dest, src2, 1, argv, callback_id, &USERDATATEST, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to export src2 from dest (errcode=%d)\n", errcode);

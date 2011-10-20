@@ -24,8 +24,10 @@
  * Test to check interface parameterisation.
  */
 
+#include<assert.h>
 #include<stdio.h>
 #include<stdlib.h>
+#include<string.h>
 
 #include"hilbert.h"
 
@@ -43,6 +45,7 @@
 static HilbertHandle s2kinds[N_S2KINDS];
 static HilbertHandle skinds[N_SKINDS];
 static HilbertHandle dkinds[N_DKINDS];
+static HilbertHandle sf0, df0, s2f3, sf3, df3; /* functor handles */
 static HilbertModule * dest;
 
 /**
@@ -73,12 +76,15 @@ static HilbertHandle callback_id(HilbertModule * restrict dest, HilbertModule * 
 		fputs("Errcode ptr in callback is NULL\n", stderr);
 		exit(EXIT_FAILURE);
 	}
+	*errcode = 0;
 	for (size_t i = 0; i != N_SKINDS; ++i) {
-		if (skinds[i] == srcObject) {
-			*errcode = 0;
+		if (skinds[i] == srcObject)
 			return dkinds[i];
-		}
 	}
+	if (sf0 == srcObject)
+		return df0;
+	if (sf3 == srcObject)
+		return df3;
 	fprintf(stderr, "Got invalid source object %u\n", (unsigned int) srcObject);
 	exit(EXIT_FAILURE);
 }
@@ -290,10 +296,12 @@ int main(void) {
 		fprintf(stderr, "Unable to create kind4 in src2 (errcode=%d)\n", errcode);
 		 exit(EXIT_FAILURE);
 	}
+	s2f3 = hilbert_functor_create(src2, s2kinds[1], 3, s2kinds, &errcode);
+	assert (errcode == 0);
 	// FIXME: other object types...
 	errcode = hilbert_module_makeimmutable(src2);
 	if (errcode != 0) {
-		fprintf(stderr, "Unable to make Hilbert module src2 immutable (errcode=&d)\n", errcode);
+		fprintf(stderr, "Unable to make Hilbert module src2 immutable (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
 	skinds[5] = hilbert_kind_create(src, &errcode);
@@ -316,6 +324,8 @@ int main(void) {
 		fprintf(stderr, "Unable to identify kind6 with kind7 in src (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
+	sf0 = hilbert_functor_create(src, skinds[5], 0, NULL, &errcode);
+	assert (errcode == 0);
 	HilbertHandle param1 = hilbert_module_param(src, src2, 0, NULL, NULL, NULL, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to parameterise module src with module src2 (errcode=%d)\n", errcode);
@@ -346,6 +356,8 @@ int main(void) {
 		fprintf(stderr, "Unable to obtain kind4 in src (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
+	sf3 = hilbert_object_getdesthandle(src, param1, s2f3, &errcode);
+	assert (errcode == 0);
 	rc = hilbert_kind_isequivalent(src, skinds[1], skinds[2], &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to check equivalence of kind1 and kind2 in src (errcode=%d)\n", errcode);
@@ -444,7 +456,6 @@ int main(void) {
 		fprintf(stderr, "Unable to identify kind8 with kind1 in src (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
-	// FIXME: other object types...
 	errcode = hilbert_module_makeimmutable(src);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to make Hilbert module src immutable (errcode=%d)\n", errcode);
@@ -485,6 +496,8 @@ int main(void) {
 		fprintf(stderr, "Unable to obtain kind4 in dest (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
+	df3 = hilbert_object_getdesthandle(dest, s2param, s2f3, &errcode);
+	assert (errcode == 0);
 	HilbertHandle sparam = hilbert_module_param(dest, src, 0, NULL, NULL, NULL, &errcode);
 	if (errcode != HILBERT_ERR_COUNT_MISMATCH) {
 		fprintf(stderr, "Expected count mismatch error, got errcode=%d instead\n", errcode);
@@ -537,6 +550,8 @@ int main(void) {
 		fprintf(stderr, "Unable to obtain kind8 in dest (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
+	df0 = hilbert_object_getdesthandle(dest, sparam, sf0, &errcode);
+	assert (errcode == 0);
 	eqc_check(0, 6, 1);
 	eqc_check(0, 7, 1);
 	eqc_check(0, 1, 0);
@@ -552,6 +567,36 @@ int main(void) {
 	eqc_check(3, 4, 0);
 	eqc_check(3, 9, 0);
 	eqc_check(4, 9, 0);
+	HilbertHandle rkind = hilbert_functor_getkind(dest, df0, &errcode);
+	assert (errcode == 0);
+	if (rkind != dkinds[5]) {
+		fprintf(stderr, "Constant functor has wrong result kind (expected: %u, got: %u)\n", (unsigned int) dkinds[5], (unsigned int) rkind);
+		exit(EXIT_FAILURE);
+	}
+	HilbertHandle * ikinds = hilbert_functor_getinputkinds(dest, df0, &count, &errcode);
+	assert (errcode == 0);
+	if (count != 0) {
+		fprintf(stderr, "Constant functor nonzero input kind count (count=%zu)\n", count);
+		exit(EXIT_FAILURE);
+	}
+	hilbert_array_free(ikinds);
+	rkind = hilbert_functor_getkind(dest, df3, &errcode);
+	assert (errcode == 0);
+	if (rkind != dkinds[1]) {
+		fprintf(stderr, "Functor has wrong result kind (expected: %u, got: %u)\n", (unsigned int) dkinds[1], (unsigned int) rkind);
+		exit(EXIT_FAILURE);
+	}
+	ikinds = hilbert_functor_getinputkinds(dest, df3, &count, &errcode);
+	assert (errcode == 0);
+	if (count != 3) {
+		fprintf(stderr, "Functor has wrong number of input kinds (expected: 3, got: %zu)\n", count);
+		exit(EXIT_FAILURE);
+	}
+	if (memcmp(ikinds, dkinds, count * sizeof(*ikinds)) != 0) {
+		fputs("Functor has wrong input kinds\n", stderr);
+		exit(EXIT_FAILURE);
+	}
+	hilbert_array_free(ikinds);
 	hilbert_module_free(src);
 	hilbert_module_free(src2);
 	hilbert_module_free(dest);

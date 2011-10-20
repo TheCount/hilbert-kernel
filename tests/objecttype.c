@@ -31,30 +31,27 @@
 #include"hilbert.h"
 
 int main(void) {
-	HilbertModule * module;
-	HilbertHandle object, object2;
 	int errcode;
-	unsigned int type, type2;
 
-	module = hilbert_module_create(HILBERT_INTERFACE_MODULE);
-	if (module == NULL) {
+	HilbertModule * imodule = hilbert_module_create(HILBERT_INTERFACE_MODULE);
+	if (imodule == NULL) {
 		fputs("Unable to create Hilbert module\n", stderr);
 		exit(EXIT_FAILURE);
 	}
 
-	type = hilbert_object_gettype(module, 666, &errcode);
+	unsigned int type = hilbert_object_gettype(imodule, 666, &errcode);
 	if (errcode != HILBERT_ERR_INVALID_HANDLE) {
 		fprintf(stderr, "Expected invalid handle error, got %d\n", errcode);
 		exit(EXIT_FAILURE);
 	}
 
 	/* kinds */
-	object = hilbert_kind_create(module, &errcode);
+	HilbertHandle kind = hilbert_kind_create(imodule, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to create kind in interface module (error code=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
-	type = hilbert_object_gettype(module, object, &errcode);
+	type = hilbert_object_gettype(imodule, kind, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to obtain kind type (error code=%d)\n", errcode);
 		exit(EXIT_FAILURE);
@@ -64,12 +61,12 @@ int main(void) {
 		exit(EXIT_FAILURE);
 	}
 
-	object2 = hilbert_kind_alias(module, object, &errcode);
+	HilbertHandle kind2 = hilbert_kind_alias(imodule, kind, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to alias kind in interface module (error code=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
-	type2 = hilbert_object_gettype(module, object2, &errcode);
+	unsigned int type2 = hilbert_object_gettype(imodule, kind2, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to obtain alias kind type (error code=%d)\n", errcode);
 		exit(EXIT_FAILURE);
@@ -80,12 +77,12 @@ int main(void) {
 	}
 
 	/* variable kinds */
-	object = hilbert_vkind_create(module, &errcode);
+	HilbertHandle vkind = hilbert_vkind_create(imodule, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to create variable kind in interface module (error code=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
-	type = hilbert_object_gettype(module, object, &errcode);
+	type = hilbert_object_gettype(imodule, vkind, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to obtain variable kind type (error code=%d)\n", errcode);
 		exit(EXIT_FAILURE);
@@ -95,12 +92,12 @@ int main(void) {
 		exit(EXIT_FAILURE);
 	}
 
-	object2 = hilbert_kind_alias(module, object, &errcode);
+	kind2 = hilbert_kind_alias(imodule, vkind, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to alias variable kind in interface module (error code=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
-	type2 = hilbert_object_gettype(module, object2, &errcode);
+	type2 = hilbert_object_gettype(imodule, kind2, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to obtain alias kind type (error code=%d)\n", errcode);
 		exit(EXIT_FAILURE);
@@ -111,9 +108,9 @@ int main(void) {
 	}
 
 	/* variables */
-	object = hilbert_var_create(module, object2, &errcode);
+	HilbertHandle var = hilbert_var_create(imodule, kind2, &errcode);
 	assert (errcode == 0);
-	type = hilbert_object_gettype(module, object, &errcode);
+	type = hilbert_object_gettype(imodule, var, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to obtain type of variable object (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
@@ -123,8 +120,21 @@ int main(void) {
 		exit(EXIT_FAILURE);
 	}
 
+	/* functors */
+	HilbertHandle functor = hilbert_functor_create(imodule, kind, 0, NULL, &errcode);
+	assert (errcode == 0);
+	type = hilbert_object_gettype(imodule, functor, &errcode);
+	if (errcode != 0) {
+		fprintf(stderr, "Unable to obtain type of functor object (errcode=%d)\n", errcode);
+		exit(EXIT_FAILURE);
+	}
+	if (!(type & HILBERT_TYPE_FUNCTOR)) {
+		fprintf(stderr, "Expected functor type, got 0x%04X\n", type);
+		exit(EXIT_FAILURE);
+	}
+
 	// FIXME: test other object types, too
 
-	hilbert_module_free(module);
+	hilbert_module_free(imodule);
 }
 

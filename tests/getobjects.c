@@ -61,20 +61,23 @@ int main(void) {
 	assert (errcode == 0);
 	HilbertHandle var2 = hilbert_var_create(module, vkind, &errcode);
 	assert (errcode == 0);
+	HilbertHandle functor = hilbert_functor_create(module, kind, 0, NULL, &errcode);
+	assert (errcode == 0);
 	// FIXME: other types of objects...
 	HilbertHandle * objects = hilbert_module_getobjects(module, &size, &errcode);
 	if (errcode != 0) {
 		fprintf(stderr, "Unable to obtain module objects (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
-	if (size != 4) {
-		fprintf(stderr, "Expected 4 objects in module, got %zu\n", size);
+	if (size != 5) {
+		fprintf(stderr, "Expected 5 objects in module, got %zu\n", size);
 		exit(EXIT_FAILURE);
 	}
 	find_object(objects, 0, kind);
 	find_object(objects, 1, vkind);
 	find_object(objects, 2, var1);
 	find_object(objects, 3, var2);
+	find_object(objects, 4, functor);
 	hilbert_array_free(objects);
 	hilbert_module_free(module);
 

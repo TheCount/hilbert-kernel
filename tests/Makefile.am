@@ -23,6 +23,7 @@
 TESTNAMES = module immutable ancillary \
 	    kind_create kind_alias kind_id kind_eq vkind_create vkind_alias vkind_id vkind_eq eqc veqc kind_vs_vkind \
 	    var_create var_getkind \
+	    functor_create functor_getkind functor_getinputkinds \
 	    objecttype param import export getobjects object_getparam object_getsource object_getsourcehandle object_getdesthandle
 check_PROGRAMS = $(TESTNAMES)
 AM_CFLAGS = -I../src/
