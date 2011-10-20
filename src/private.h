@@ -98,6 +98,61 @@ struct Variable {
 };
 
 /**
+ * Basic functor.
+ */
+struct BasicFunctor {
+	/**
+	 * Basic functor type (#HILBERT_TYPE_FUNCTOR)
+	 */
+	unsigned int type;
+
+	/**
+	 * Result kind of functor.
+	 */
+	HilbertHandle result_kind;
+
+	/**
+	 * Place count of functor.
+	 */
+	size_t place_count;
+
+	/**
+	 * Input kinds.
+	 */
+	HilbertHandle * input_kinds;
+};
+
+/**
+ * External basic functor.
+ */
+struct ExternalBasicFunctor {
+	/**
+	 * External basic functor type (#HILBERT_TYPE_FUNCTOR | #HILBERT_TYPE_EXTERNAL)
+	 */
+	unsigned int type;
+
+	/**
+	 * Result kind of functor.
+	 */
+	HilbertHandle result_kind;
+
+	/**
+	 * Place count of functor.
+	 */
+	size_t place_count;
+
+	/**
+	 * Input kinds.
+	 */
+	HilbertHandle * input_kinds;
+
+	/**
+	 * Index into <code>#struct HilbertModule::paramhandles</code>.
+	 */
+	size_t paramindex;
+};
+
+/**
  * Parameter.
  */
 struct Param {
@@ -125,6 +180,8 @@ union Object {
 	struct Kind kind;
 	struct ExternalKind external_kind;
 	struct Variable var;
+	struct BasicFunctor basic_functor;
+	struct ExternalBasicFunctor external_basic_functor;
 	struct Param param;
 };
 
@@ -145,6 +202,16 @@ static inline void hilbert_kind_free(union Object * kind) {
  */
 static inline void hilbert_var_free(union Object * var) {
 	free(var);
+}
+
+/**
+ * Frees a functor.
+ *
+ * @param functor Pointer to a previously allocated functor.
+ */
+static inline void hilbert_functor_free(union Object * functor) {
+	free(functor->basic_functor.input_kinds);
+	free(functor);
 }
 
 /**
@@ -175,12 +242,16 @@ static inline void hilbert_object_free(union Object * object) {
 		case HILBERT_TYPE_VAR:
 			hilbert_var_free(object);
 			break;
+		case HILBERT_TYPE_FUNCTOR:
+		case HILBERT_TYPE_FUNCTOR | HILBERT_TYPE_EXTERNAL:
+			hilbert_functor_free(object);
+			break;
 		case HILBERT_TYPE_PARAM:
 			hilbert_param_free(object);
 			break;
 		/* FIXME: case ... */
 		default:
-			assert (2 + 2 == 5);
+			assert ("Unexpected constituent type" == NULL);
 			break;
 	}
 }
@@ -228,6 +299,11 @@ struct HilbertModule {
 	 * Variable handles.
 	 */
 	IndexVector * varhandles;
+
+	/**
+	 * Functor handles.
+	 */
+	IndexVector * functorhandles;
 
 	/**
 	 * Parameter handles.

@@ -178,6 +178,12 @@ typedef HilbertHandle (*HilbertMapperCallback)(HilbertModule * restrict dest, Hi
 #define HILBERT_TYPE_VAR      0x0010u
 
 /**
+ * Flag to indicate that the corresponding object is a functor.
+ * This flag is mutually exclusive with <code>#HILBERT_TYPE_KIND</code>, <code>#HILBERT_TYPE_PARAM</code>, <code>#HILBERT_TYPE_VAR</code> and <code>#HILBERT_TYPE_VKIND</code>.
+ */
+#define HILBERT_TYPE_FUNCTOR  0x0020u
+
+/**
  * Creates a new Hilbert module.
  *
  * @param type The type of the module. Can be one of the following:
@@ -460,6 +466,67 @@ HilbertHandle hilbert_var_create(HilbertModule * restrict module, HilbertHandle 
 HilbertHandle hilbert_var_getkind(HilbertModule * restrict module, HilbertHandle var, int * restrict errcode);
 
 /**
+ * Creates a new functor.
+ *
+ * @param module Pointer to a Hilbert interface module in which the functor is to be created.
+ * @param rkind Non-variable kind handle indicating the result kind of the new functor.
+ * @param count Number of input kinds of the functor (place count).
+ * @param ikinds Pointer to the first element of an array of <code>count</code> kind handles. If <code>count == 0</code>, this may be <code>NULL</code>.
+ * 	The corresponding kinds are the input kinds to the functor.
+ * @param errcode Pointer to an integer to convey an error code.
+ *
+ * @return On error, the return value is unspecified, and a negative value is stored in <code>*errcode/code>,
+ * 	which may be one of the following error codes:
+ * 		- <code>#HILBERT_ERR_NOMEM</code>:
+ * 			There was not enough memory available to create the new functor.
+ * 		- <code>#HILBERT_ERR_INVALID_MODULE</code>:
+ * 			The module specified by <code>module</code> is not an interface module.
+ * 		- <code>#HILBERT_ERR_IMMUTABLE</code>:
+ * 			The module pointed to by <code>module</code> is immutable.
+ * 		- <code>#HILBERT_ERR_INVALID_HANDLE</code>:
+ * 			<code>rkind</code> is not a non-variable kind handle, or one of the elements in the array pointed to by <code>ikinds</code> is not a kind handle.
+ * 	On success, <code>0</code> is stored in <code>*errcode</code> and a handle for the new functor is returned.
+ */
+HilbertHandle hilbert_functor_create(HilbertModule * restrict module, HilbertHandle rkind, size_t count, const HilbertHandle * restrict ikinds, int * restrict errcode);
+
+/**
+ * Returns the result kind of a functor.
+ *
+ * @param module Pointer to the Hilbert module in which the functor resides.
+ * @param functor Functor handle.
+ * @param errcode Pointer to an integer to convey an error code.
+ *
+ * @return On error, the return value is unspecified, and a negative value is stored in <code>*errcode/code>,
+ * 	which may be one of the following error codes:
+ * 		- <code>#HILBERT_ERR_INVALID_HANDLE</code>:
+ * 			<code>functor</code> is not a functor handle in <code>module</code>.
+ * 	On success, <code>0</code> is stored in <code>*errcode</code> and a handle for the result kind is returned.
+ */
+HilbertHandle hilbert_functor_getkind(HilbertModule * restrict module, HilbertHandle functor, int * restrict errcode);
+
+/**
+ * Returns the input kinds of a functor.
+ *
+ * @param module Pointer to the Hilbert module in which the functor resides.
+ * @param functor Functor handle.
+ * @param size Pointer to a location where the place count of the functor can be stored.
+ * @param errcode Pointer to an integer to convey an error code.
+ *
+ * @return On error, the <code>*size</code> and the return value are unspecified, and a negative value is stored in <code>*errcode/code>,
+ * 	which may be one of the following error codes:
+ * 		- <code>#HILBERT_ERR_NOMEM</code>:
+ * 			There was not enough memory available to complete the request.
+ * 		- <code>#HILBERT_ERR_INVALID_HANDLE</code>:
+ * 			<code>functor</code> is not a functor handle in <code>module</code>.
+ * 	On success, <code>0</code> is stored in <code>*errcode</code>, the place count of the functor is stored in <code>*size</code>,
+ * 	and a pointer to an array of size <code>*size</code> containing the input kind handles in proper order is returned.
+ * 	The returned array should be freed by the user once it is no longer needed.
+ *
+ * @sa #hilbert_array_free()
+ */
+HilbertHandle * hilbert_functor_getinputkinds(HilbertModule * restrict module, HilbertHandle functor, size_t * restrict size, int * restrict errcode);
+
+/**
  * Parameterises a Hilbert interface module with another Hilbert interface module.
  *
  * @param dest Pointer to a Hilbert module.
@@ -468,7 +535,7 @@ HilbertHandle hilbert_var_getkind(HilbertModule * restrict module, HilbertHandle
  * @param argv Pointer to an array of parameter handles serving as arguments to <code>src</code>.
  * 	If <code>argc == 0</code>, this may be <code>NULL</code>.
  * @param mapper User-provided callback function mapping objects coming from the parameters of <code>src</code> to the argument objects.
- * 	The callback is only called for kinds and functors <!--FIXME--> external to <code>src</code>.
+ * 	The callback is only called for kinds and functors external to <code>src</code>.
  * 	If <code>argc == 0</code>, this may be <code>NULL</code>.
  * @param userdata Pointer to user-defined data. It is passed as an argument to the userdata parameter of <code>mapper</code>, and is otherwise ignored.
  * @param errcode Pointer to an integer to convey an error code.
@@ -504,7 +571,7 @@ HilbertHandle hilbert_module_param(HilbertModule * restrict dest, HilbertModule 
  * @param argv Pointer to an array of parameter handles serving as arguments to the module pointed to by <code>src</code>.
  * 	If <code>argc == 0</code>, this may be <code>NULL</code>.
  * @param mapper User-provided callback function mapping objects coming from the parameters of the module pointed to by <code>src</code> to the argument objects.
- * 	The callback is only called for kinds, functors <!--FIXME--> and statements <!--FIXME--> external to the module pointed to by <code>src</code>.
+ * 	The callback is only called for kinds, functors and statements <!--FIXME--> external to the module pointed to by <code>src</code>.
  * 	If <code>argc == 0</code>, this may be <code>NULL</code>.
  * @param userdata Pointer to user-defined data. It is passed as an argument to the userdata parameter of <code>mapper</code>, and is otherwise ignored.
  * @param errcode Pointer to an integer to convey an error code.
@@ -542,7 +609,7 @@ HilbertHandle hilbert_module_import(HilbertModule * restrict dest, HilbertModule
  * 	If <code>argc == 0</code>, this may be <code>NULL</code>.
  * @param mapper User-provided callback function mapping objects from the module pointed to by <code>src</code> to the
  * 	objects in the module pointed to by <code>dest</code>.
- * 	The callback is called for kinds, functors <!--FIXME--> and statements <!--FIXME-->.
+ * 	The callback is called for kinds, functors and statements <!--FIXME-->.
  * 	If <code>argc == 0</code>, this may be <code>NULL</code>.
  * @param userdata Pointer to user-defined data.
  * 	It is passed as an argument to the userdata parameter of <code>mapper</code>, and is otherwise ignored.

@@ -140,6 +140,100 @@ noahmem:
 	return errcode;
 }
 
+/**
+ * Exports functors of a source module from a destination module.
+ *
+ * @param dest Pointer to destination module, assumed to be locked.
+ * @param src Pointer to source module, assumed to be locked.
+ * @param argv Pointer to array of arguments to the parameters of the module pointed to by <code>src</code>.
+ * 	If the number of elements in the array does not match the number of parameters, the behaviour is undefined.
+ * @param mapper Pointer to parameter handle to argument handle mapper function.
+ * @param userdata Pointer to user-defined data passed as an argument to the userdata parameter of <code>mapper</code>.
+ * @param param Pointer to the new parameter.
+ *
+ * @return On success, <code>0</code> is returned. On error, a nonzero value is returned.
+ */
+static int export_functors(struct HilbertModule * restrict dest, struct HilbertModule * restrict src, const HilbertHandle * restrict argv, HilbertMapperCallback mapper, void * userdata, struct Param * restrict param) {
+	assert (dest != NULL);
+	assert (src != NULL);
+	assert ((hilbert_ivector_count(src->paramhandles) == 0) || (argv != NULL));
+	assert (mapper != NULL);
+	assert (param != NULL);
+
+	int errcode;
+	int rc;
+
+	/* Inspect all source functors */
+	for (IndexVectorIterator i = hilbert_ivector_iterator_new(src->functorhandles); hilbert_ivector_iterator_hasnext(&i);) {
+		HilbertHandle srcfunctorhandle = hilbert_ivector_iterator_next(&i);
+		union Object * srcobject = hilbert_ovector_get(src->objects, srcfunctorhandle);
+		assert (srcobject->generic.type & HILBERT_TYPE_FUNCTOR); // FIXME: abbrev, def?
+		HilbertHandle destfunctorhandle = mapper(dest, src, srcfunctorhandle, userdata, &errcode);
+		if (errcode != 0)
+			goto error;
+		union Object * destobject = hilbert_object_retrieve(dest, destfunctorhandle, HILBERT_TYPE_FUNCTOR);
+		if (destobject == NULL) {
+			errcode = HILBERT_ERR_INVALID_MAPPING;
+			goto error;
+		}
+		if (srcobject->generic.type & HILBERT_TYPE_EXTERNAL) {
+			/* check externality */
+			if (!(destobject->generic.type & HILBERT_TYPE_EXTERNAL)) {
+				errcode = HILBERT_ERR_INVALID_MAPPING;
+				goto error;
+			}
+			struct ExternalBasicFunctor * srcfunctor = &srcobject->external_basic_functor;
+			HilbertHandle arghandle = argv[srcfunctor->paramindex];
+			struct ExternalBasicFunctor * destfunctor = &destobject->external_basic_functor;
+			HilbertHandle destparamhandle = hilbert_ivector_get(dest->paramhandles, destfunctor->paramindex);
+			if (destparamhandle != arghandle) {
+				errcode = HILBERT_ERR_INVALID_MAPPING;
+				goto error;
+			}
+		}
+		/* check if functor data matches */
+		struct BasicFunctor * srcfunctor = &srcobject->basic_functor;
+		struct BasicFunctor * destfunctor = &destobject->basic_functor;
+		const HilbertHandle * kindp = hilbert_pmap_post(param->handle_map, destfunctor->result_kind);
+		assert (kindp != NULL);
+		rc = hilbert_kind_isequivalent(src, *kindp, srcfunctor->result_kind, &errcode);
+		assert (errcode == 0);
+		if (!rc) {
+			errcode = HILBERT_ERR_INVALID_MAPPING;
+			goto error;
+		}
+		if (srcfunctor->place_count != destfunctor->place_count) {
+			errcode = HILBERT_ERR_INVALID_MAPPING;
+			goto error;
+		}
+		for (size_t i = 0; i != destfunctor->place_count; ++i) {
+			kindp = hilbert_pmap_post(param->handle_map, destfunctor->input_kinds[i]);
+			assert (kindp != NULL);
+			rc = hilbert_kind_isequivalent(src, *kindp, srcfunctor->input_kinds[i], &errcode);
+			assert (errcode == 0);
+			if (!rc) {
+				errcode = HILBERT_ERR_INVALID_MAPPING;
+				goto error;
+			}
+		}
+		/* add mapping */
+		const HilbertHandle * test = hilbert_pmap_post(param->handle_map, destfunctorhandle);
+		if (test != NULL) {
+			errcode = HILBERT_ERR_MAPPING_CLASH;
+			goto error;
+		}
+		if (hilbert_pmap_add(param->handle_map, destfunctorhandle, srcfunctorhandle) != 0) {
+			errcode = HILBERT_ERR_NOMEM;
+			goto error;
+		}
+	}
+
+	errcode = 0;
+
+error:
+	return errcode;
+}
+
 HilbertHandle hilbert_module_export(struct HilbertModule * restrict dest, struct HilbertModule * restrict src,
 		size_t argc, const HilbertHandle * restrict argv, HilbertMapperCallback mapper, void * userdata,
 		int * restrict errcode) {
@@ -209,7 +303,10 @@ HilbertHandle hilbert_module_export(struct HilbertModule * restrict dest, struct
 	*errcode = export_kinds(dest, src, argv, mapper, userdata, &param->param);
 	if (*errcode != 0)
 		goto kindexporterror;
-	// FIXME: functors and statements
+	*errcode = export_functors(dest, src, argv, mapper, userdata, &param->param); // FIXME: abbrev, def?
+	if (*errcode != 0)
+		goto functorexporterror;
+	// FIXME: statements
 	
 	if (hilbert_ivector_pushback(dest->paramhandles, result) != 0) {
 		*errcode = HILBERT_ERR_NOMEM;
@@ -224,6 +321,7 @@ HilbertHandle hilbert_module_export(struct HilbertModule * restrict dest, struct
 
 deperror:
 noparamhandlemem:
+functorexporterror:
 kindexporterror:;
 		size_t newcount = hilbert_ovector_count(dest->objects);
 		for (size_t i = oldcount + 1; i < newcount; ++i) { /* param is freed below */
