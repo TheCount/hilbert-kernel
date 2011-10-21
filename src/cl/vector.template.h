@@ -38,6 +38,7 @@
 #include<assert.h>
 #include<stdint.h>
 #include<stdlib.h>
+#include<string.h>
 
 /**
  * Vector structure.
@@ -113,6 +114,33 @@ static inline void PREFIX_del(VECTOR * vector) {
 }
 
 /**
+ * Grows a vector (private).
+ *
+ * @param vector Pointer to the vector to be grown.
+ *
+ * @return On success, <code>0</code> is returned.
+ * 	On error, <code>-1</code> is returned.
+ */
+static inline int PREFIX_grow(VECTOR * vector) {
+	assert (vector != NULL);
+
+	size_t oldalloc = vector->size * sizeof(*vector->data);
+	size_t newalloc = 2 * oldalloc;
+	if (newalloc <= oldalloc)
+		return -1;
+	size_t newsize = newalloc / sizeof(*vector->data);
+
+	VALUE_TYPE * newdata = realloc(vector->data, newalloc);
+	if (newdata == NULL)
+		return -1;
+
+	vector->size = newsize;
+	vector->data = newdata;
+
+	return 0;
+}
+
+/**
  * Adds an element to the end of a vector.
  *
  * @param vector Pointer to the vector to which an element is to be added.
@@ -127,17 +155,8 @@ static inline int PREFIX_pushback(VECTOR * vector, VALUE_TYPE elt) {
 
 	size_t newcount = vector->count + 1;
 	if (newcount > vector->size) {
-		/* grow vector */
-		size_t oldalloc = vector->size * sizeof(*vector->data);
-		size_t newalloc = 2 * oldalloc;
-		if (newalloc <= oldalloc)
+		if (PREFIX_grow(vector) != 0)
 			return -1;
-		size_t newsize = newalloc / sizeof(*vector->data);
-		VALUE_TYPE * newdata = realloc(vector->data, newalloc);
-		if (newdata == NULL)
-			return -1;
-		vector->size = newsize;
-		vector->data = newdata;
 	}
 	vector->data[vector->count] = elt;
 	vector->count = newcount;
@@ -157,6 +176,34 @@ static inline VALUE_TYPE PREFIX_popback(VECTOR * vector) {
 	assert (vector->count > 0);
 
 	return vector->data[--vector->count];
+}
+
+/**
+ * Appends a copy of a vector to the end of a vector.
+ *
+ * @param dest Pointer to the vector to which a copy of another vector is to be appended.
+ * @param src Pointer to the vector a copy of which is to be appended to <code>dest</code>.
+ *
+ * @return On success, <code>0</code> is returned.
+ * 	On error, <code>-1</code> is returned.
+ */
+static inline int PREFIX_append(VECTOR * dest, VECTOR * src) {
+	assert (dest != NULL);
+	assert (src != NULL);
+
+	size_t newcount = dest->count + src->count;
+	if (newcount < dest->count)
+		return -1;
+
+	while (newcount > dest->size) {
+		if (PREFIX_grow(dest) != 0)
+			return -1; // FIXME: doesn't return possibly grossly overallocated memory
+	}
+
+	memcpy(dest->data + dest->count, src->data, src->count * sizeof(*src->data));
+	dest->count = newcount;
+
+	return 0;
 }
 
 /**
@@ -205,6 +252,29 @@ static inline VALUE_TYPE PREFIX_get(const VECTOR * vector, size_t index) {
 	assert (index < vector->count);
 
 	return vector->data[index];
+}
+
+/**
+ * Returns an array containing a copy of the elements of a vector.
+ *
+ * @param vector Pointer to the vector a copy of whose elements is to be returned as an array.
+ *
+ * @return On success, a pointer to an array with a copy of the elements from the vector pointed to by <code>vector</code> is returned.
+ * 	If the vector does not contain any elemnts, this may be <code>NULL</code>.
+ * 	The returned array must be freed by the user.
+ * 	On error, <code>NULL</code> is returned.
+ */
+static inline VALUE_TYPE * PREFIX_toarray(const VECTOR * vector) {
+	assert (vector != NULL);
+
+	size_t allocsize = vector->count * sizeof(*vector->data);
+	VALUE_TYPE * result = malloc(allocsize);
+	if (result == NULL)
+		return NULL;
+
+	memcpy(result, vector->data, allocsize);
+
+	return result;
 }
 
 /**
