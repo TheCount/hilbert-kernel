@@ -255,6 +255,21 @@ static inline VALUE_TYPE PREFIX_get(const VECTOR * vector, size_t index) {
 }
 
 /**
+ * Returns the last element from a vector.
+ *
+ * @param vector Pointer to the vector from which the last element is to be returned.
+ * 	If the vector does not have any elements, the behaviour is undefined.
+ *
+ * @return The last element of the vector is returned.
+ */
+static inline VALUE_TYPE PREFIX_last(const VECTOR * vector) {
+	assert (vector != 0);
+	assert (vector->count > 0);
+
+	return vector->data[vector->count - 1];
+}
+
+/**
  * Returns an array containing a copy of the elements of a vector.
  *
  * @param vector Pointer to the vector a copy of whose elements is to be returned as an array.
