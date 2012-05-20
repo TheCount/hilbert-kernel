@@ -47,6 +47,19 @@ typedef struct HilbertModule HilbertModule;
 typedef size_t HilbertHandle;
 
 /**
+ * Hilbert expression types.
+ */
+enum HilbertExpressionType {
+	HILBERT_FINISHED_EXPRESSION,
+	HILBERT_UNFINISHED_EXPRESSION
+};
+
+/**
+ * Opaque Hilbert expression type.
+ */
+typedef struct HilbertExpression HilbertExpression;
+
+/**
  * Maximum integer value representable as a <code>#HilbertHandle</code>.
  */
 #define HILBERT_HANDLE_MAX SIZE_MAX
@@ -123,6 +136,11 @@ typedef HilbertHandle (*HilbertMapperCallback)(HilbertModule * restrict dest, Hi
  * kind equivalence classes.
  */
 #define HILBERT_ERR_NO_EQUIVALENCE  (-8)
+
+/**
+ * Error code to indicate that a Hilbert expression provided to a library function is invalid.
+ */
+#define HILBERT_ERR_INVALID_EXPR    (-9)
 
 /**
  * Error code to indicate a serious internal error in the Hilbert kernel library.
@@ -496,7 +514,7 @@ HilbertHandle hilbert_functor_create(HilbertModule * restrict module, HilbertHan
  * @param functor Functor handle.
  * @param errcode Pointer to an integer to convey an error code.
  *
- * @return On error, the return value is unspecified, and a negative value is stored in <code>*errcode/code>,
+ * @return On error, the return value is unspecified, and a negative value is stored in <code>*errcode</code>,
  * 	which may be one of the following error codes:
  * 		- <code>#HILBERT_ERR_INVALID_HANDLE</code>:
  * 			<code>functor</code> is not a functor handle in <code>module</code>.
@@ -525,6 +543,260 @@ HilbertHandle hilbert_functor_getkind(HilbertModule * restrict module, HilbertHa
  * @sa #hilbert_harray_free()
  */
 HilbertHandle * hilbert_functor_getinputkinds(HilbertModule * restrict module, HilbertHandle functor, size_t * restrict size, int * restrict errcode);
+
+/**
+ * Creates a new Hilbert expression.
+ *
+ * @param module Pointer to the Hilbert module on which the expression should be based.
+ * @param head Handle of the expression head (either a variable or a functor).
+ * @param count Number of subexpressions. Must match the place count of <code>head</code>, or, if <code>head</code> is a variable handle, it must be zero.
+ * @param subexpr Pointer to an array of finished Hilbert expressions.
+ * 	If <code>count</code> is zero, this argument may be <code>NULL</code>.
+ * @param errcode Pointer to an integer to convey an error code.
+ *
+ * @return On error, the return value is unspecified, and a negative value is stored in <code>*errcode</code>,
+ * 	which may be one of the following error codes:
+ * 		- <code>#HILBERT_ERR_NOMEM</code>:
+ * 			There was not enough memory available to create the expression.
+ * 		- <code>#HILBERT_ERR_INVALID_HANDLE</code>:
+ * 			<code>head</code> is neither a variable handle nor a functor handle in <code>module</code>.
+ * 		- <code>#HILBERT_ERR_INVALID_MODULE</code>:
+ * 			One of the expressions in the array pointed to by <code>subexpr</code> is not based on <code>module</code>.
+ * 		- <code>#HILBERT_ERR_COUNT_MISMATCH</code>:
+ * 			<head> is a variable handle and <code>count != 0</code>, or <code>count</code> does not equal the place count of <code>head</code>.
+ * 		- <code>#HILBERT_ERR_INVALID_EXPR</code>:
+ * 			One of the expressions in the array pointed to by <code>subexpr</code> is not a finished expression.
+ * 		- <code>#HILBERT_ERR_NO_EQUIVALENCE</code>:
+ * 			The kind of one of the expressions in the array pointed to by <code>subexpr</code> is not equivalent to the corresponding input kind of <code>head</code>.
+ * 	On success, <code>0</code> is stored in <code>*errcode</code>, and a pointer to a new, finished Hilbert expression is returned. If <code>head</code> is a variable handle, it consists solely of that variable.
+ * 	Otherwise, its head functor is <code>head</code> and its subexpressions are given by the expressions in the array pointed to by <code>subexpr</code>.
+ *
+ * @sa #hilbert_expression_free()
+ */
+HilbertExpression * hilbert_expression_create(HilbertModule * restrict module, HilbertHandle head, size_t count, HilbertExpression ** restrict subexpr, int * restrict errcode);
+
+/**
+ * Starts a new Hilbert expression.
+ *
+ * @param module Pointer to the Hilbert module on which the expression should be based.
+ * @param errcode Pointer to an integer to convey an error code.
+ *
+ * @param On error, the return value is unspecified, and a negative value is stored on <code>*errcode</code>,
+ * 	which may be one of the following error codes:
+ * 		- <code>#HILBERT_ERR_NOMEM</code>:
+ * 			There was not enough memory available to start the expression.
+ * 	On success, <code>0</code> is stored in <code>*errcode</code>, and a pointer to a new, unfinished Hilbert expression of length zero is returned.
+ *
+ * @sa #hilbert_expression_free()
+ */
+HilbertExpression * hilbert_expression_start(HilbertModule * restrict module, int * restrict errcode);
+
+/**
+ * Adds a variable or a functor to an unfinished Hilbert expression.
+ * If the module on which the expression is based has been freed, the behaviour is undefined.
+ *
+ * @param expr Pointer to an unfinished Hilbert expression.
+ * @param handle Variable or functor handle to be added to the expression. The handle must be from the module <code>expr</code> is based on.
+ * @param errcode Pointer to an integer to convey an error code.
+ *
+ * @return On error, the return value is unspecified, and a negative value is stored on <code>*errcode</code>,
+ * 	which may be one of the following error codes:
+ * 		- <code>#HILBERT_ERR_NOMEM</code>:
+ * 			There was not enough memory available to add the handle.
+ * 		- <code>#HILBERT_ERR_INVALID_EXPR</code>:
+ * 			The expression pointed to by <code>expr</code> is not unfinished.
+ * 		- <code>#HILBERT_ERR_INVALID_HANDLE</code>:
+ * 			<code>handle</code> is not a variable handle or a functor handle in the module <code>expr</code> is based on.
+ * 		- <code>#HILBERT_ERR_NO_EQUIVALENCE</code>:
+ * 			The kind of <code>handle</code> is not equivalent to the corresponding input kind.
+ * 	On success, <code>0</code> is stored in <code>*errcode</code>, and the type of <code>expr</code> after adding the handle is returned (i.e., whether the expression in now finished).
+ */
+enum HilbertExpressionType hilbert_expression_add(HilbertExpression * restrict expr, HilbertHandle handle, int * restrict errcode);
+
+/**
+ * Creates a Hilbert expression from an array of Hilbert handles.
+ *
+ * @param module Pointer to the Hilbert module on which the expression should be based.
+ * @param length Length of <code>handles</code>.
+ * @param handles Pointer to an array of Hilbert handles. May be <code>NULL</code> if <code>length</code> is zero.
+ * 	The handles are expected in forward Polish order.
+ * @param errcode Pointer to an integer to convey an error code.
+ *
+ * @return On error, the return value is unspecified and a negative value is stored in <code>*errcode</code>,
+ * 	which may be one of the following error codes:
+ * 		- <code>#HILBERT_ERR_NOMEM</code>:
+ * 			There was not enough memory available to create the expression.
+ * 		- <code>#HILBERT_ERR_INVALID_HANDLE</code>:
+ * 			One of the handles in the array pointed to by <code>handles</code> is not a valid functor or variable handle of <code>module</code>.
+ * 		- <code>#HILBERT_ERR_NO_EQUIVALENCE</code>:
+ * 			The kind of one of the handles in the array pointed to by <code>handles</code> is not equivalent to the corresponding input kind.
+ * 		- <code>#HILBERT_ERR_INVALID_EXPR</code>:
+ * 			There are excess handles after the expression is finished.
+ * 	On success, <code>0</code> is stored in <code>*errcode</code>, and a pointer to a new Hilbert expression with forward Polish representation as in the array pointed to by <code>handles</code> is returned.
+ * 	The new expression is not necessarily finished.
+ *
+ * @sa #hilbert_expression_free()
+ * @sa #hilbert_expression_toarray()
+ */
+HilbertExpression * hilbert_expression_fromarray(HilbertModule * restrict module, size_t length, const HilbertHandle * restrict handles, int * restrict errcode);
+
+/**
+ * Returns the type of a Hilbert expression.
+ * If the module on which the expression is based has been freed, the behaviour is undefined.
+ *
+ * @param expr Pointer to a Hilbert expression.
+ * @param errcode Pointer to an integer to convey an error code.
+ *
+ * @return On error, the return value is unspecified, and a negative value is stored in <code>*errcode</code>.
+ * 	On success, <code>0</code> is stored in <code>*errcode</code>, and the expression type (finished or unfinished) is returned.
+ */
+enum HilbertExpressionType hilbert_expression_gettype(HilbertExpression * restrict expr, int * restrict errcode);
+
+/**
+ * Returns the Hilbert module on which the specified expression is based.
+ * If that module has already been freed, the behaviour is undefined.
+ *
+ * @param expr Pointer to a Hilbert expression.
+ *
+ * @return The module on which the expression is based is returned.
+ */
+HilbertModule * hilbert_expression_getmodule(HilbertExpression * expr);
+
+/**
+ * Returns the kind of a Hilbert expression.
+ * If the module on which the expression is based has been freed, the behaviour is undefined.
+ *
+ * @param expr Pointer to a Hilbert expression.
+ * @param errcode Pointer to an integer to convey an error code.
+ *
+ * @return On error, the return value is unspecified, and a negative value is stored in <code>*errcode</code>,
+ * 	which may be one of the following error codes:
+ * 		- <code>#HILBERT_ERR_INVALID_EXPR</code>:
+ * 			The expression pointed to by <code>expr</code> is not finished.
+ * 	On success, <code>0</code> is stored in <code>*errcode</code>, and a kind handle representing the kind of the specified expression is returned.
+ * 	The module in which the returned handle is defined is the module the expression is based on.
+ */
+HilbertHandle hilbert_expression_getkind(HilbertExpression * restrict expr, int * restrict errcode);
+
+/**
+ * Returns the immediate Hilbert subexpressions of the head of the specified finished Hilbert expression.
+ * If the module on which the expression is based has been freed, the behaviour is undefined.
+ *
+ * @param expr Pointer to a Hilbert expression.
+ * @param count Pointer to a <code>size_t</code> to convey the number of subexpressions.
+ * @param errcode Pointer to an integer to convey an error code.
+ *
+ * @return On error, the return value and <code>*count</code> are unspecified, and a negative value is stored in <code>*errcode</code>,
+ * 	which may be one of the following error codes:
+ * 		- <code>#HILBERT_ERR_NOMEM</code>:
+ * 			There was not enough memory available to complete the request.
+ * 		- <code>#HILBERT_ERR_INVALID_EXPR</code>:
+ * 			The expression pointed to by <code>expr</code> is not finished.
+ * 	On success, <code>0</code> is stored in <code>*errcode</code>, and a pointer to an array of pointers to Hilbert expressions, the subexpressions of the head of the expression pointed to by <code>expr</code>, is returned,
+ * 	the size of which is stored in <code>*count</code>. If <code>*count</code> is zero, the returned value may be <code>NULL</code>. If the head of the expression pointed to by <code>expr</code> is a variable,
+ * 	then <code>*count</code> is always zero, otherwise <code>*count</code> equals the place count of the head functor.
+ *
+ * @sa #hilbert_earray_free()
+ */
+HilbertExpression ** hilbert_expression_subexpressions(HilbertExpression * restrict expr, size_t * restrict count, int * restrict errcode);
+
+/**
+ * Frees an array of Hilbert expressions.
+ *
+ * @param count Length of the array.
+ * @param expressions Pointer to an array of pointers to Hilbert expressions to be freed.
+ */
+void hilbert_earray_free(size_t count, HilbertExpression ** expressions);
+
+/**
+ * Returns the length of a Hilbert expression.
+ * If the module on which the expression is based has been freed, the behaviour is undefined.
+ *
+ * @param expr Pointer to a Hilbert expression.
+ * @param errcode Pointer to an integer to convey an error code.
+ *
+ * @return On error, the return value is unspecified, and a negative value is stored in <code>*errcode</code>.
+ * 	On success, <code>0</code> is stored in <code>*errcode</code>, and the length of the specified expression is returned. Note that if the expression is still unfinished, subsequent calls may return larger values.
+ */
+size_t hilbert_expression_getlength(HilbertExpression * restrict expr, int * restrict errcode);
+
+/**
+ * Returns a Hilbert expression as an array of handles.
+ * If the module on which the expression is based has been freed, the behaviour is undefined.
+ *
+ * @param expr Pointer to a Hilbert expression.
+ * @param length Pointer to a <code>size_t</code> to convey the number of elements in the returned array.
+ * @param errcode Pointer to an integer to convey an error code.
+ *
+ * @return On error, the return value and <code>*length</code> are unspecified, and a negative value is stored in <code>*errcode</code>,
+ * 	which may be one of the following error codes:
+ * 		- <code>#HILBERT_ERR_NOMEM</code>:
+ * 			There was not enough memory available to perform the request.
+ * 	On success, <code>0</code> is stored in <code>*errcode</code>, and a pointer to an array of Hilbert handles representing the expression is returned. The length of the array is stored in <code>*length</code>.
+ *
+ * @sa #hilbert_harray_free()
+ * @sa #hilbert_expression_fromarray()
+ */
+HilbertHandle * hilbert_expression_toarray(HilbertExpression * restrict expr, size_t * restrict length, int * restrict errcode);
+
+/**
+ * Returns the variables in a Hilbert expression in order of left-to-right occurrence in its forward Polish representation.
+ * If the module on which the expression is based has been freed, the behaviour is undefined.
+ *
+ * @param expr Pointer to a Hilbert expression.
+ * @param count Pointer to a <code>size_t</code> to store the number of variables.
+ * @param errcode Pointer to an integer to convey an error code.
+ *
+ * @return On error, the return value and <code>*count</code> are unspecified, and a negative value is stored in <code>*errcode</code>,
+ * 	which may be one of the following error codes:
+ * 		- <code>#HILBERT_ERR_NOMEM</code>:
+ * 			There was not enough memory available to perform the request.
+ * 	On success, <code>0</code> is stored in <code>*errcode</code>, and a pointer to an array of Hilbert handles representing the occurring variables is returned. The length of the array is stored in <code>*length</code>.
+ *
+ * @sa #hilbert_harray_free()
+ */
+HilbertHandle * hilbert_expression_variables(HilbertExpression * restrict expr, size_t * restrict count, int * restrict errcode);
+
+/**
+ * Creates a new Hilbert expression by substituting the variables in another expression with finished expressions.
+ * If the module on which the expressions are based has been freed, the behaviour is undefined.
+ *
+ * @param src Pointer to the Hilbert expression on which the substitution is to be performed.
+ * @param count The number of variables to be substituted.
+ * @param substitutions Pointer to an array of <code>count</code> pointers to Hilbert expressions which are to be substituted for the variables of <code>src</code> in left-to-right order in forward Polish representation.
+ * 	If <code>count</code> is zero, this may be <code>NULL</code>.
+ * @param errcode Pointer to an integer to convey an error code.
+ *
+ * @return On error, the return value is unspecified, and a negative value is stored in <code>*errcode</code>,
+ * 	which may be one of the following error codes:
+ * 		- <code>#HILBERT_ERR_NOMEM</code>:
+ * 			There was not enough memory available to perform the request.
+ * 		- <code>#HILBERT_ERR_COUNT_MISMATCH</code>:
+ * 			<code>count</code> does not equal the number of variables in <code>src</code>.
+ * 		- <code>#HILBERT_ERR_INVALID_MODULE</code>:
+ * 			One of the expressions in <code>substitutions</code> is not based on the same module as <code>src</code>.
+ * 		- <code>#HILBERT_ERR_INVALID_EXPR</code>:
+ * 			One of the expressions in <code>substitutions</code> is unfinished.
+ * 		- <code>#HILBERT_ERR_NO_EQUIVALENCE</code>:
+ * 			The kind of one of the expressions in <code>substitutions</code> is not equivalent to the kind of the variable it is to be substituted for.
+ * 	On success, <code>0</code> is stored in <code>*errcode</code>, and a pointer to a new expression with the specified substitutions is returned.
+ *
+ * @sa #hilbert_expression_free()
+ */
+HilbertExpression * hilbert_expression_substitute(HilbertExpression * restrict src, size_t count, HilbertExpression ** restrict substitutions, int * restrict errcode);
+
+/**
+ * Frees a Hilbert expression.
+ *
+ * This must be the last function called on an expression pointer.
+ * It must be called after all other functions called on the expression pointer have returned.
+ * Otherwise, the behaviour is undefined.
+ * It is recommended that expressions be freed <em>before</em> the module they are based on is freed
+ * because the behaviour of many functions involving expressions is undefined if the underlying module has already been freed.
+ *
+ * @param expr Pointer to a previously created Hilbert expression.
+ */
+void hilbert_expression_free(HilbertExpression * expr);
 
 /**
  * Parameterises a Hilbert interface module with another Hilbert interface module.

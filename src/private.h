@@ -322,6 +322,32 @@ struct HilbertModule {
 };
 
 /**
+ * Private expression structure.
+ */
+struct HilbertExpression {
+	/**
+	 * Mutual exclusion device.
+	 */
+	HILBERT_MUTEX_DECL(mutex);
+
+	/**
+	 * Module the expression is based on.
+	 */
+	struct HilbertModule * module;
+
+	/**
+	 * Kind stack of kinds to expect next when piecing together unfinished expressions.
+	 * An expression is finished if and only if this is <code>NULL</code>.
+	 */
+	IndexVector * kindstack;
+
+	/**
+	 * Expression in forward Polish representation
+	 */
+	IndexVector * handles;
+};
+
+/**
  * Retrieves an object if it has the specified type.
  *
  * @param module pointer to a Hilbert module.

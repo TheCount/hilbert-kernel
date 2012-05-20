@@ -28,3 +28,9 @@
 void hilbert_harray_free(HilbertHandle * handle_array) {
 	free(handle_array);
 }
+
+void hilbert_earray_free(size_t count, struct HilbertExpression ** expressions) {
+	for (size_t i = 0; i != count; ++i)
+		hilbert_expression_free(expressions[i]);
+	free(expressions);
+}
