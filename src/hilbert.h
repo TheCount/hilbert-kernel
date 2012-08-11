@@ -235,7 +235,7 @@ void hilbert_module_free(HilbertModule * module);
 /**
  * Obtains the type of a Hilbert module.
  *
- * @param module Pointer to a code>#HilbertModule</code> previously returned by a successful call to <code>#hilbert_module_create()</code>.
+ * @param module Pointer to a <code>#HilbertModule</code> previously returned by a successful call to <code>#hilbert_module_create()</code>.
  *
  * @return The <code>#HilbertModuleType</code> of the module pointed to by <code>module</code> is returned.
  *
@@ -250,7 +250,7 @@ enum HilbertModuleType hilbert_module_gettype(HilbertModule * module);
  * Only immutable interface modules can be imported or exported,
  * or used as parameters.
  *
- * @param module Pointer to a code>#HilbertModule</code> previously returned by a successful call to <code>#hilbert_module_create()</code>.
+ * @param module Pointer to a <code>#HilbertModule</code> previously returned by a successful call to <code>#hilbert_module_create()</code>.
  * 	The module must be of type <code>#HILBERT_INTERFACE_MODULE</code>.
  *
  * @return On success, <code>0</code> is returned.
@@ -268,7 +268,7 @@ int hilbert_module_makeimmutable(HilbertModule * module);
 /**
  * Checks whether a Hilbert module is immutable.
  *
- * @param module Pointer to a code>#HilbertModule</code> previously returned by a successful call to <code>#hilbert_module_create()</code>.
+ * @param module Pointer to a <code>#HilbertModule</code> previously returned by a successful call to <code>#hilbert_module_create()</code>.
  * @param errcode Pointer to an integer used to convey an error code.
  *
  * @return On error, a negative value is stored in <code>*errcode</code> and the return value is unspecified.
@@ -287,7 +287,7 @@ int hilbert_module_isimmutable(HilbertModule * restrict module, int * restrict e
  * Users may install a pointer to arbitrary ancillary data in a module.
  * This can be helpful for adding convenient support in higher level libraries.
  *
- * @param module Pointer to a code>#HilbertModule</code> previously returned by a successful call to <code>#hilbert_module_create()</code>.
+ * @param module Pointer to a <code>#HilbertModule</code> previously returned by a successful call to <code>#hilbert_module_create()</code>.
  * @param newdata Pointer to new ancillary data.
  * @param olddata Pointer to a writable location able to hold a pointer, or <code>NULL</code>.
  *
@@ -307,7 +307,7 @@ int hilbert_module_setancillary(HilbertModule * module, void * newdata, void ** 
 /**
  * Obtains pointer to ancillary data to the module.
  *
- * @param module Pointer to a code>#HilbertModule</code> previously returned by a successful call to <code>#hilbert_module_create()</code>.
+ * @param module Pointer to a <code>#HilbertModule</code> previously returned by a successful call to <code>#hilbert_module_create()</code>.
  * @param data Pointer to a writable location able to hold a pointer.
  *
  * @return On success, <code>0</code> is returned.
@@ -429,7 +429,7 @@ int hilbert_kind_isequivalent(HilbertModule * restrict module, HilbertHandle kin
  * @param count Pointer to a <code>size_t</code> to convey the number of elements in the equivalence class.
  * @param errcode Pointer to an integer to convey an error code.
  *
- * @return On error, <code>NULL</code> is returned, the value of <code>*count</count> is unspecified,
+ * @return On error, <code>NULL</code> is returned, the value of <code>*count</code> is unspecified,
  * 	and a negative value is stored in <code>*errcode</code>, which may be one of the following error codes:
  * 		- <code>#HILBERT_ERR_NOMEM</code>:
  * 			There was not enough memory available to create a copy of the equivalence class.
@@ -437,7 +437,7 @@ int hilbert_kind_isequivalent(HilbertModule * restrict module, HilbertHandle kin
  * 			<code>kind</code> is not a valid handle for a kind.
  * 	On success, a pointer to the first element of an array of kind handles representing the equivalence class
  * 	is returned. The array has no specific order and contains <code>kind</code>. The number of elements in the
- * 	array is stored in <code>*count</count>. Zero is stored in <code>*errcode</code>.
+ * 	array is stored in <code>*count</code>. Zero is stored in <code>*errcode</code>.
  * 	The returned array must be freed by the caller with #hilbert_harray_free().
  *
  * @sa hilbert_harray_free()
@@ -499,7 +499,7 @@ HilbertHandle hilbert_var_getkind(HilbertModule * restrict module, HilbertHandle
  * 	The corresponding kinds are the input kinds to the functor.
  * @param errcode Pointer to an integer to convey an error code.
  *
- * @return On error, the return value is unspecified, and a negative value is stored in <code>*errcode/code>,
+ * @return On error, the return value is unspecified, and a negative value is stored in <code>*errcode</code>,
  * 	which may be one of the following error codes:
  * 		- <code>#HILBERT_ERR_NOMEM</code>:
  * 			There was not enough memory available to create the new functor.
@@ -536,7 +536,7 @@ HilbertHandle hilbert_functor_getkind(HilbertModule * restrict module, HilbertHa
  * @param size Pointer to a location where the place count of the functor can be stored.
  * @param errcode Pointer to an integer to convey an error code.
  *
- * @return On error, the <code>*size</code> and the return value are unspecified, and a negative value is stored in <code>*errcode/code>,
+ * @return On error, the <code>*size</code> and the return value are unspecified, and a negative value is stored in <code>*errcode</code>,
  * 	which may be one of the following error codes:
  * 		- <code>#HILBERT_ERR_NOMEM</code>:
  * 			There was not enough memory available to complete the request.
@@ -569,7 +569,7 @@ HilbertHandle * hilbert_functor_getinputkinds(HilbertModule * restrict module, H
  * 		- <code>#HILBERT_ERR_INVALID_MODULE</code>:
  * 			One of the expressions in the array pointed to by <code>subexpr</code> is not based on <code>module</code>.
  * 		- <code>#HILBERT_ERR_COUNT_MISMATCH</code>:
- * 			<head> is a variable handle and <code>count != 0</code>, or <code>count</code> does not equal the place count of <code>head</code>.
+ * 			<code>head</code> is a variable handle and <code>count != 0</code>, or <code>count</code> does not equal the place count of <code>head</code>.
  * 		- <code>#HILBERT_ERR_INVALID_EXPR</code>:
  * 			One of the expressions in the array pointed to by <code>subexpr</code> is not a finished expression.
  * 		- <code>#HILBERT_ERR_NO_EQUIVALENCE</code>:
@@ -587,7 +587,7 @@ HilbertExpression * hilbert_expression_create(HilbertModule * restrict module, H
  * @param module Pointer to the Hilbert module on which the expression should be based.
  * @param errcode Pointer to an integer to convey an error code.
  *
- * @param On error, the return value is unspecified, and a negative value is stored on <code>*errcode</code>,
+ * @return On error, the return value is unspecified, and a negative value is stored on <code>*errcode</code>,
  * 	which may be one of the following error codes:
  * 		- <code>#HILBERT_ERR_NOMEM</code>:
  * 			There was not enough memory available to start the expression.
