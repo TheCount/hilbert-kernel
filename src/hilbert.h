@@ -309,8 +309,7 @@ int hilbert_module_setancillary(HilbertModule * module, void * newdata, void ** 
  * @return On success, <code>0</code> is returned.
  * 	The ancillary data pointer set by the last successful call to <code>hilbert_module_setancillary()</code> is assigned to <code>*data</code>.
  * 	If there was no such call, <code>NULL</code> is assigned.
- * 	On error, a negative value is returned.
- * 	The value of <code>*data</code> is unspecified.
+ * 	On error, a negative value is returned, and the value of <code>*data</code> is unspecified.
  *
  * @sa hilbert_module_setancillary()
  */
@@ -435,6 +434,9 @@ int hilbert_kind_isequivalent(HilbertModule * restrict module, HilbertHandle kin
  * 	On success, a pointer to the first element of an array of kind handles representing the equivalence class
  * 	is returned. The array has no specific order and contains <code>kind</code>. The number of elements in the
  * 	array is stored in <code>*count</count>. Zero is stored in <code>*errcode</code>.
+ * 	The returned array must be freed by the caller with #hilbert_harray_free().
+ *
+ * @sa hilbert_harray_free()
  */
 HilbertHandle * hilbert_kind_equivalenceclass(HilbertModule * restrict module, HilbertHandle kind, size_t * restrict count,
 		int * restrict errcode);
