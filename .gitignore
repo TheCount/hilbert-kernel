@@ -13,6 +13,8 @@ configure
 libtool
 .deps
 .libs
+doc/Doxyfile
+doc/api
 
 # Build files
 src/libhilbert.la

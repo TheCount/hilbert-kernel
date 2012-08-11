@@ -20,6 +20,10 @@
  *     on wiki : http://www.wikiproofs.org/w/index.php?title=User_talk:GrafZahl
  */
 
+/**
+ * @file hilbert.h
+ */
+
 #ifndef HILBERT_H__
 #define HILBERT_H__
 

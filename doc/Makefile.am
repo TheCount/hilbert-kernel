@@ -20,6 +20,15 @@
 #     on wiki : http://www.wikiproofs.org/w/index.php?title=User_talk:GrafZahl
 #
 
-ACLOCAL_AMFLAGS=-I m4
-nobase_data_DATA = doc/api
-SUBDIRS = doc/ src/ tests/
+DX_DOCFILES = @top_srcdir@/src/hilbert.h
+
+include aminclude.am
+
+if DX_COND_doc
+DX_CLEANFILES += texput.log @DX_DOCDIR@
+MOSTLYCLEANFILES = $(DX_CLEANFILES)
+
+all-local: doxygen-doc
+
+endif DX_COND_doc
+
