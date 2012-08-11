@@ -1,6 +1,6 @@
 /*
- *  The Hilbert Kernel Library, a library for verifying formal proofs.
- *  Copyright © 2011 Alexander Klauer
+ *  Template container library.
+ *  Copyright © 2011, 2012 Alexander Klauer
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,21 +21,24 @@
  */
 
 /**
+ * @file set.template.h
+ *
  * Replacements from set template:
  * - <code>SET</code>:
  *   Set typename.
  * - <code>VALUE_TYPE</code>:
  *   Type of the values stored.
- * - <code>SITER</code>:
- *   Set iterator type.
  * - <code>PREFIX</code>:
  *   Function name prefix.
  * - <code>HASH</code>:
  *   Name of hash function to be used.
+ * - <code>COMPARATOR</code>
+ *   Name of value comparator.
+ *   If COMPARATOR, the default (identity) comparator will be used.
  */
 
-#ifndef HILBERT_CL_SET_H__
-#define HILBERT_CL_SET_H__
+#ifndef CL_SET_H__
+#define CL_SET_H__
 
 #include<assert.h>
 #include<stdint.h>
@@ -43,6 +46,23 @@
 #include<string.h>
 
 #include"hash.h"
+#include"util.h"
+
+/**
+ * Comparator hack.
+ * Makes the comparator all caps replacement optional.
+ */
+#define COMPARATOR 42
+#define CL_A COMPA ## RATOR
+#define CL_B COMPARATOR
+#if ( CL_A == CL_B ) // comparator all caps was not replaced; valid expression by C99 6.10.1 clause 4, 3rd sentence.
+#undef COMPARATOR
+#define COMPARATOR( x, y ) ( ( x ) != ( y ) )
+#else // comparator all caps was replaced
+#undef COMPARATOR
+#endif
+#undef CL_A
+#undef CL_B
 
 /**
  * Initial number of buckets
@@ -105,20 +125,28 @@ struct SET {
 typedef struct SET SET;
 
 /**
- * Set iterator structure.
+ * Initializes a new, empty set.
+ *
+ * @param set Pointer to a set.
+ *
+ * @return On success, 0 is returned.
+ * 	On error, -1 is returned.
  */
-struct SITER {
-	/**
-	 * Pointer to the set over which we are iterating.
-	 */
-	SET * set;
-	/**
-	 * Current index.
-	 */
-	size_t index;
-};
+static inline int PREFIX_init( SET * set ) WARN_UNUSED_RESULT;
+static inline int PREFIX_init( SET * set ) {
+	assert( set != NULL );
 
-typedef struct SITER SITER;
+	set->count = 0;
+	set->threshold = (CL_SET_MAXLOAD - 1) * CL_SET_NUMBUCKETS / CL_SET_MAXLOAD;
+	set->sizemask = CL_SET_NUMBUCKETS - 1;
+
+	set->buckets = calloc(CL_SET_NUMBUCKETS, sizeof( *set->buckets ) );
+	if ( set->buckets == NULL ) {
+		return -1;
+	} else {
+		return 0;
+	}
+}
 
 /**
  * Creates a new, empty set.
@@ -126,19 +154,18 @@ typedef struct SITER SITER;
  * @return On success, a pointer to a new empty set is returned.
  * 	On error, <code>NULL</code> is returned.
  */
+static inline SET * PREFIX_new(void) WARN_UNUSED_RESULT;
 static inline SET * PREFIX_new(void) {
 	SET * result;
 
 	result = malloc(sizeof(*result));
 	if (result == NULL)
 		goto nosetmem;
-	result->count = 0;
-	result->threshold = (CL_SET_MAXLOAD - 1) * CL_SET_NUMBUCKETS / CL_SET_MAXLOAD;
-	result->sizemask = CL_SET_NUMBUCKETS - 1;
 
-	result->buckets = calloc(CL_SET_NUMBUCKETS, sizeof(*result->buckets));
-	if (result->buckets == NULL)
+	int rc = PREFIX_init( result );
+	if ( rc != 0 ) {
 		goto nobucketmem;
+	}
 
 	return result;
 
@@ -149,6 +176,17 @@ nosetmem:
 }
 
 /**
+ * Uninitializes a set.
+ *
+ * @param set Pointer to set.
+ */
+static inline void PREFIX_fini( SET * set ) {
+	assert( set != NULL );
+
+	free( set->buckets );
+}
+
+/**
  * Deletes a set.
  *
  * @param set Pointer to a set.
@@ -156,7 +194,7 @@ nosetmem:
 static inline void PREFIX_del(SET * set) {
 	assert (set != NULL);
 
-	free(set->buckets);
+	PREFIX_fini( set );
 	free(set);
 }
 
@@ -168,6 +206,7 @@ static inline void PREFIX_del(SET * set) {
  * @return On success, a pointer to a new set is returned, containing precisely the elements of the old set.
  * 	On error, <code>NULL</code> is returned.
  */
+static inline SET * PREFIX_clone(const SET * set) WARN_UNUSED_RESULT;
 static inline SET * PREFIX_clone(const SET * set) {
 	assert (set != NULL);
 
@@ -227,7 +266,7 @@ static inline void PREFIX_store(struct SETBucket * buckets, size_t sizemask, VAL
  * 	If the element is occupied, it contains <code>value</code>.
  * 	Otherwise, the element is suitable for storing <code>value</code>.
  */
-static inline struct SETBucket * PREFIX_find(struct SETBucket * buckets, size_t sizemask, VALUE_TYPE value, size_t hash) {
+static inline struct SETBucket * PREFIX_find(struct SETBucket * buckets, size_t sizemask, const VALUE_TYPE value, size_t hash) {
 	assert (buckets != NULL);
 	assert (sizemask > 0);
 	assert (sizemask < SIZE_MAX);
@@ -246,7 +285,7 @@ static inline struct SETBucket * PREFIX_find(struct SETBucket * buckets, size_t 
 				}
 				break;
 			case CL_SET_BUCKET_OCCUPIED:
-				if (buckets[i].value == value)
+				if ( COMPARATOR( buckets[i].value, value ) == 0 )
 					return &buckets[i];
 				break;
 			case CL_SET_BUCKET_DELETED:
@@ -271,6 +310,7 @@ static inline struct SETBucket * PREFIX_find(struct SETBucket * buckets, size_t 
  * @return On success, <code>0</code> is returned.
  * 	On error, <code>-1</code> is returned.
  */
+static inline int PREFIX_add(SET * set, VALUE_TYPE value) WARN_UNUSED_RESULT;
 static inline int PREFIX_add(SET * set, VALUE_TYPE value) {
 	assert (set != NULL);
 
@@ -325,6 +365,7 @@ static inline int PREFIX_add(SET * set, VALUE_TYPE value) {
  * @return On success, <code>0</code> is returned.
  * 	On error, <code>-1</code> is returned.
  */
+static inline int PREFIX_addall(SET * restrict dest, const SET * restrict src) WARN_UNUSED_RESULT;
 static inline int PREFIX_addall(SET * restrict dest, const SET * restrict src) {
 	assert (dest != NULL);
 	assert (src != NULL);
@@ -368,7 +409,7 @@ backupallocfail:
  * @return If <code>value</code> was present in the set pointed to by <code>set</code>, <code>1</code> is returned.
  * 	Otherwise, <code>0</code> is returned.
  */
-static inline int PREFIX_remove(SET * set, VALUE_TYPE value) {
+static inline int PREFIX_remove(SET * set, const VALUE_TYPE value) {
 	assert (set != NULL);
 
 	struct SETBucket * candidate = PREFIX_find(set->buckets, set->sizemask, value, HASH(value));
@@ -380,6 +421,24 @@ static inline int PREFIX_remove(SET * set, VALUE_TYPE value) {
 	--set->count;
 
 	return 1;
+}
+
+/**
+ * Obtains an element from a set.
+ *
+ * @param set Pointer to a set.
+ * @param value Value euqal to the value to be obtained.
+ *
+ * @return An entry equal to <code>value</code> is returned from the set.
+ * 	If no such entry exists, the behaviour is undefined.
+ */
+static inline VALUE_TYPE PREFIX_get( SET * set, const VALUE_TYPE value ) {
+	assert( set != NULL );
+
+	struct SETBucket * candidate = PREFIX_find(set->buckets, set->sizemask, value, HASH(value));
+	assert( candidate->state == CL_SET_BUCKET_OCCUPIED );
+
+	return candidate->value;
 }
 
 /**
@@ -403,7 +462,7 @@ static inline void PREFIX_clear(SET * set) {
  * @return If <code>value</code> is present in the set pointed to by <code>set</code>, <code>1</code> is returned.
  * 	Otherwise, <code>0</code> is returned.
  */
-static inline int PREFIX_contains(const SET * set, VALUE_TYPE value) {
+static inline int PREFIX_contains(const SET * set, const VALUE_TYPE value) {
 	assert (set != NULL);
 
 	return (PREFIX_find(set->buckets, set->sizemask, value, HASH(value))->state == CL_SET_BUCKET_OCCUPIED);
@@ -423,53 +482,73 @@ static inline size_t PREFIX_count(const SET * set) {
 }
 
 /**
- * Creates a new iterator for a set.
+ * Starts an iteration over a set.
  *
  * @param set Pointer to a set.
  *
- * @return An iterator for the set pointed to by <code>set</code> is returned.
+ * @return An opaque iterator handle pointing to the first element in the
+ * 	iteration is returned. If the specified set is empty, NULL is
+ * 	returned.
  */
-static inline SITER PREFIX_iterator_new(SET * set) {
-	assert (set != NULL);
+static inline void * PREFIX_iterator_start( const SET * set ) WARN_UNUSED_RESULT;
+static inline void * PREFIX_iterator_start( const SET * set ) {
+	assert( set != NULL );
 
-	return (SITER) { .set = set, .index = 0 };
+	for ( size_t i = 0; i <= set->sizemask; ++i ) {
+		if ( set->buckets[i].state == CL_SET_BUCKET_OCCUPIED ) {
+			return &set->buckets[i];
+		}
+	}
+
+	return NULL;
 }
 
 /**
- * Checks whether an iterator has a next element.
+ * Returns the current value in a set iteration.
  *
- * @param i Pointer to an iterator.
+ * @param set Pointer to a set.
+ * @param iter Iteration handle belonging to the specified set.
  *
- * @return If there is a next element in the iteration, <code>1</code> is returned.
- * 	Otherwise, <code>0</code> is returned.
+ * @return The value the iteration handle is pointing to is returned.
  */
-static inline int PREFIX_iterator_hasnext(SITER * i) {
-	assert (i != NULL);
+static inline VALUE_TYPE PREFIX_iterator_get( const SET * set, void * iter ) {
+	assert( set != NULL );
+	assert( iter != NULL );
 
-	for(; i->index <= i->set->sizemask; ++i->index) {
-		if (i->set->buckets[i->index].state == CL_SET_BUCKET_OCCUPIED)
-			return 1;
-	}
+	struct SETBucket * current = iter;
+	assert( ( set->buckets <= current ) && ( current <= set->buckets + set->sizemask ) );
 
-	return 0;
+	return current->value;
 }
 
 /**
- * Returns the next element in an iteration.
+ * Continues an iteration over a set.
  *
- * @param i Pointer to an iterator.
+ * @param set Pointer to a set.
+ * @param iter Iteration handle belonging to the specified set.
  *
- * @return The next element in the iteration is returned.
- * 	If there is no next element in the iteration, the behaviour is undefined.
+ * @return An iteration handle pointing to the next element in the iteration
+ * 	is returned. If the current element is the last element in the
+ * 	iteration, NULL is returned.
  */
-static inline VALUE_TYPE PREFIX_iterator_next(SITER * i) {
-	assert (i != NULL);
+static inline void * PREFIX_iterator_next( const SET * set, void * iter ) WARN_UNUSED_RESULT;
+static inline void * PREFIX_iterator_next( const SET * set, void * iter ) {
+	assert( set != NULL );
+	assert( iter != NULL );
 
-	for (;; ++i->index) {
-		assert (i->index <= i->set->sizemask);
-		if (i->set->buckets[i->index].state == CL_SET_BUCKET_OCCUPIED)
-			return i->set->buckets[i->index++].value;
+	struct SETBucket * current = iter;
+	assert( ( set->buckets <= current ) && ( current <= set->buckets + set->sizemask ) );
+
+	for ( size_t i = current - set->buckets + 1; i <= set->sizemask; ++i ) {
+		if ( set->buckets[i].state == CL_SET_BUCKET_OCCUPIED ) {
+			return &set->buckets[i];
+		}
 	}
+
+	return NULL;
 }
+
+/* End of comparator hack. */
+#undef COMPARATOR
 
 #endif

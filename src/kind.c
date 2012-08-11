@@ -302,9 +302,10 @@ HilbertHandle * hilbert_kind_equivalenceclass(struct HilbertModule * restrict mo
 		result = malloc(*count * sizeof(*result));
 		if (result == NULL)
 			goto nomem;
-		IndexSetIterator iterator = hilbert_iset_iterator_new(object->kind.equivalence_class);
-		for (size_t i = 0; i != *count; ++i)
-			result[i] = hilbert_iset_iterator_next(&iterator);
+		void * iterator = hilbert_iset_iterator_start( object->kind.equivalence_class );
+		for (size_t i = 0; i != *count; ++i, iterator = hilbert_iset_iterator_next( object->kind.equivalence_class, iterator ) ) {
+			result[i] = hilbert_iset_iterator_get( object->kind.equivalence_class, iterator );
+		}
 	}
 	*errcode = 0;
 

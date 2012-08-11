@@ -61,9 +61,8 @@ static int export_kinds(struct HilbertModule * restrict dest, struct HilbertModu
 	}
 
 	/* Inspect all source kinds */
-	for (IndexVectorIterator i = hilbert_ivector_iterator_new(src->kindhandles);
-			hilbert_ivector_iterator_hasnext(&i);) {
-		HilbertHandle srckindhandle = hilbert_ivector_iterator_next(&i);
+	for ( void * i = hilbert_ivector_iterator_start( src->kindhandles ); i != NULL; i = hilbert_ivector_iterator_next( src->kindhandles, i ) ) {
+		HilbertHandle srckindhandle = hilbert_ivector_iterator_get( src->kindhandles, i );
 		union Object * srcobject = hilbert_ovector_get(src->objects, srckindhandle);
 		assert (srcobject->generic.type & HILBERT_TYPE_KIND);
 		HilbertHandle destkindhandle = mapper(dest, src, srckindhandle, userdata, &errcode);
@@ -101,9 +100,8 @@ static int export_kinds(struct HilbertModule * restrict dest, struct HilbertModu
 	}
 
 	/* check equivalence classes */
-	for (IndexVectorIterator i = hilbert_ivector_iterator_new(src->kindhandles);
-			hilbert_ivector_iterator_hasnext(&i);) {
-		HilbertHandle srckindhandle = hilbert_ivector_iterator_next(&i);
+	for ( void * i = hilbert_ivector_iterator_start( src->kindhandles ); i != NULL; i = hilbert_ivector_iterator_next( src->kindhandles, i ) ) {
+		HilbertHandle srckindhandle = hilbert_ivector_iterator_get( src->kindhandles, i );
 		if (hilbert_iset_contains(already_handled, srckindhandle))
 			continue;
 		union Object * srcobject = hilbert_ovector_get(src->objects, srckindhandle);
@@ -114,9 +112,8 @@ static int export_kinds(struct HilbertModule * restrict dest, struct HilbertModu
 			continue;
 		const HilbertHandle * destkindhandle = hilbert_pmap_pre(param->handle_map, srckindhandle);
 		assert (destkindhandle != NULL);
-		for (IndexSetIterator j = hilbert_iset_iterator_new(srckind->equivalence_class);
-				hilbert_iset_iterator_hasnext(&j);) {
-			HilbertHandle srckindhandle2 = hilbert_iset_iterator_next(&j);
+		for ( void * j = hilbert_iset_iterator_start( srckind->equivalence_class ); j != NULL; j = hilbert_iset_iterator_next( srckind->equivalence_class, j ) ) {
+			HilbertHandle srckindhandle2 = hilbert_iset_iterator_get( srckind->equivalence_class, j );
 			const HilbertHandle * destkindhandle2 = hilbert_pmap_pre(param->handle_map, srckindhandle2);
 			assert (destkindhandle2 != NULL);
 			int rc = hilbert_kind_isequivalent(dest, *destkindhandle, *destkindhandle2, &errcode);
@@ -164,8 +161,8 @@ static int export_functors(struct HilbertModule * restrict dest, struct HilbertM
 	int rc;
 
 	/* Inspect all source functors */
-	for (IndexVectorIterator i = hilbert_ivector_iterator_new(src->functorhandles); hilbert_ivector_iterator_hasnext(&i);) {
-		HilbertHandle srcfunctorhandle = hilbert_ivector_iterator_next(&i);
+	for ( void * i = hilbert_ivector_iterator_start( src->functorhandles ); i != NULL; i = hilbert_ivector_iterator_next( src->functorhandles, i ) ) {
+		HilbertHandle srcfunctorhandle = hilbert_ivector_iterator_get( src->functorhandles, i );
 		union Object * srcobject = hilbert_ovector_get(src->objects, srcfunctorhandle);
 		assert (srcobject->generic.type & HILBERT_TYPE_FUNCTOR); // FIXME: abbrev, def?
 		HilbertHandle destfunctorhandle = mapper(dest, src, srcfunctorhandle, userdata, &errcode);

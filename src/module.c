@@ -116,8 +116,8 @@ void hilbert_module_free(struct HilbertModule * module) {
 
 	module->freeable = 1;
 
-	for (ModuleSetIterator i = hilbert_mset_iterator_new(module->dependencies); hilbert_mset_iterator_hasnext(&i);) {
-		struct HilbertModule * dependency = hilbert_mset_iterator_next(&i);
+	for ( void * i = hilbert_mset_iterator_start( module->dependencies ); i != NULL; i = hilbert_mset_iterator_next( module->dependencies, i ) ) {
+		struct HilbertModule * dependency = hilbert_mset_iterator_get( module->dependencies, i );
 		rc = mtx_lock(&dependency->mutex);
 		assert (rc == thrd_success);
 		rc = hilbert_mset_remove(dependency->reverse_dependencies, module);
@@ -142,16 +142,14 @@ void hilbert_module_free(struct HilbertModule * module) {
 		return;
 
 	/* free kind equivalence classes */
-	for (IndexVectorIterator i = hilbert_ivector_iterator_new(module->kindhandles);
-			hilbert_ivector_iterator_hasnext(&i);) {
-		union Object * object = hilbert_ovector_get(module->objects, hilbert_ivector_iterator_next(&i));
+	for ( void * i = hilbert_ivector_iterator_start( module->kindhandles ); i != NULL; i = hilbert_ivector_iterator_next( module->kindhandles, i ) ) {
+		union Object * object = hilbert_ovector_get(module->objects, hilbert_ivector_iterator_get( module->kindhandles, i ) );
 		assert (object->generic.type & HILBERT_TYPE_KIND);
 		IndexSet * equivalence_class = object->kind.equivalence_class;
 		if (equivalence_class == NULL)
 			continue;
-		for (IndexSetIterator j = hilbert_iset_iterator_new(equivalence_class);
-				hilbert_iset_iterator_hasnext(&j);) {
-			union Object * object2 = hilbert_ovector_get(module->objects, hilbert_iset_iterator_next(&j));
+		for ( void * j = hilbert_iset_iterator_start( equivalence_class ); j != NULL; j = hilbert_iset_iterator_next( equivalence_class, j ) ) {
+			union Object * object2 = hilbert_ovector_get(module->objects, hilbert_iset_iterator_get( equivalence_class, j ) );
 			assert (object2->generic.type & HILBERT_TYPE_KIND);
 			object2->kind.equivalence_class = NULL;
 		}
@@ -159,8 +157,9 @@ void hilbert_module_free(struct HilbertModule * module) {
 	}
 
 	/* free objects */
-	for (ObjectVectorIterator i = hilbert_ovector_iterator_new(module->objects); hilbert_ovector_iterator_hasnext(&i);)
-		hilbert_object_free(hilbert_ovector_iterator_next(&i));
+	for ( void * i = hilbert_ovector_iterator_start( module->objects ); i != NULL; i = hilbert_ovector_iterator_next( module->objects, i ) ) {
+		hilbert_object_free( hilbert_ovector_iterator_get( module->objects, i ) );
+	}
 
 	/* free other stuff */
 	hilbert_mset_del(module->reverse_dependencies);

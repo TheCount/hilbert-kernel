@@ -1,6 +1,6 @@
 /*
- *  The Hilbert Kernel Library, a library for verifying formal proofs.
- *  Copyright © 2011 Alexander Klauer
+ *  Template container library.
+ *  Copyright © 2011, 2012 Alexander Klauer
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,6 +21,8 @@
  */
 
 /**
+ * @file bimap.template.h
+ *
  * Replacements from bimap template:
  * - <code>BIMAP</code>:
  *   Bimap typename.
@@ -30,24 +32,27 @@
  *   Type of the bimap's codomain.
  * - <code>ENTRY_TYPE</code>:
  *   Type of the bimap entries.
- * - <code>BMITER</code>:
- *   Bimap iterator type.
  * - <code>PREFIX</code>:
  *   Function name prefix.
  * - <code>DOM_HASH</code>:
  *   Name of domain hash function.
  * - <code>COD_HASH</code>:
  *   Name of codomain hash function.
+ * - <code>DOM_COMPARATOR</code>
+ *   Name of domain element comparator (default: identity).
+ * - <code>COD_COMPARATOR</code>
+ *   Name of codomain element comparator (default: identity).
  */
 
-#ifndef HILBERT_CL_BIMAP_H__
-#define HILBERT_CL_BIMAP_H__
+#ifndef CL_BIMAP_H__
+#define CL_BIMAP_H__
 
 #include<assert.h>
 #include<stdint.h>
 #include<stdlib.h>
 
 #include"hash.h"
+#include"util.h"
 
 /**
  * Initial number of buckets.
@@ -58,6 +63,32 @@
  * Maximum load coefficient.
  */
 #define CL_BIMAP_MAXLOAD 4
+
+/**
+ * Comparator hack.
+ */
+#define DOM_COMPARATOR 42
+#define CL_A DOM_COMPA ## RATOR
+#define CL_B DOM_COMPARATOR
+#if ( CL_A == CL_B )
+#undef DOM_COMPARATOR
+#define DOM_COMPARATOR( x, y ) ( ( x ) != ( y ) )
+#else
+#undef DOM_COMPARATOR
+#endif
+#undef CL_A
+#undef CL_B
+#define COD_COMPARATOR 42
+#define CL_A COD_COMPA ## RATOR
+#define CL_B COD_COMPARATOR
+#if ( CL_A == CL_B )
+#undef COD_COMPARATOR
+#define COD_COMPARATOR( x, y ) ( ( x ) != ( y ) )
+#else
+#undef COD_COMPARATOR
+#endif
+#undef CL_A
+#undef CL_B
 
 /**
  * Bucket states.
@@ -131,21 +162,36 @@ struct BIMAP {
 typedef struct BIMAP BIMAP;
 
 /**
- * Bimap iterator structure.
+ * Initialized an empty bimap.
+ *
+ * @param bimap Pointer to a bimap.
+ *
+ * @return On success, 0 is returned.
+ * 	On error, -1 is returned.
  */
-struct BMITER {
-	/**
-	 * Pointer to bimap over which we are iterating.
-	 */
-	BIMAP * bimap;
+static inline int PREFIX_init( struct BIMAP * bimap ) WARN_UNUSED_RESULT;
+static inline int PREFIX_init( struct BIMAP * bimap ) {
+	assert( bimap != NULL );
 
-	/**
-	 * Current index (domain based).
-	 */
-	size_t index;
-};
+	bimap->count = 0;
+	bimap->threshold = (CL_BIMAP_MAXLOAD - 1) * CL_BIMAP_NUMBUCKETS / CL_BIMAP_MAXLOAD;
+	bimap->sizemask = CL_BIMAP_NUMBUCKETS - 1;
 
-typedef struct BMITER BMITER;
+	bimap->dom_buckets = calloc(CL_BIMAP_NUMBUCKETS, sizeof(*bimap->dom_buckets));
+	if (bimap->dom_buckets == NULL)
+		goto nodommem;
+
+	bimap->cod_buckets = calloc(CL_BIMAP_NUMBUCKETS, sizeof(*bimap->dom_buckets));
+	if (bimap->cod_buckets == NULL)
+		goto nocodmem;
+
+	return 0;
+
+nocodmem:
+	free( bimap->dom_buckets );
+nodommem:
+	return -1;
+}
 
 /**
  * Creates a new, empty bimap.
@@ -153,6 +199,7 @@ typedef struct BMITER BMITER;
  * @return On success, a pointer to a new, empty bimap is returned.
  * 	On error, <code>NULL</code> is returned.
  */
+static inline BIMAP * PREFIX_new(void) WARN_UNUSED_RESULT;
 static inline BIMAP * PREFIX_new(void) {
 	BIMAP * result;
 
@@ -160,26 +207,29 @@ static inline BIMAP * PREFIX_new(void) {
 	if (result == NULL)
 		goto nomapmem;
 
-	result->count = 0;
-	result->threshold = (CL_BIMAP_MAXLOAD - 1) * CL_BIMAP_NUMBUCKETS / CL_BIMAP_MAXLOAD;
-	result->sizemask = CL_BIMAP_NUMBUCKETS - 1;
-
-	result->dom_buckets = calloc(CL_BIMAP_NUMBUCKETS, sizeof(*result->dom_buckets));
-	if (result->dom_buckets == NULL)
-		goto nodommem;
-
-	result->cod_buckets = calloc(CL_BIMAP_NUMBUCKETS, sizeof(*result->dom_buckets));
-	if (result->cod_buckets == NULL)
-		goto nocodmem;
+	int rc = PREFIX_init( result );
+	if ( rc != 0 ) {
+		goto noinit;
+	}
 
 	return result;
 
-nocodmem:
-	free(result->dom_buckets);
-nodommem:
+noinit:
 	free(result);
 nomapmem:
 	return NULL;
+}
+
+/**
+ * Uninitializes a bimap.
+ *
+ * @param bimap Pointer to a bimap.
+ */
+static inline void PREFIX_fini( struct BIMAP * bimap ) {
+	assert( bimap != NULL );
+
+	free( bimap->cod_buckets );
+	free( bimap->dom_buckets );
 }
 
 /**
@@ -190,8 +240,7 @@ nomapmem:
 static inline void PREFIX_del(BIMAP * bimap) {
 	assert (bimap != NULL);
 
-	free(bimap->cod_buckets);
-	free(bimap->dom_buckets);
+	PREFIX_fini( bimap );
 	free(bimap);
 }
 
@@ -251,7 +300,7 @@ static inline struct BIMAPBucket * PREFIX_find_pre(struct BIMAPBucket * buckets,
 				}
 				break;
 			case CL_BIMAP_BUCKET_OCCUPIED:
-				if (buckets[i].entry.pre == pre)
+				if ( DOM_COMPARATOR( buckets[i].entry.pre, pre ) == 0 )
 					return &buckets[i];
 				break;
 			case CL_BIMAP_BUCKET_DELETED:
@@ -299,7 +348,7 @@ static inline struct BIMAPBucket * PREFIX_find_post(struct BIMAPBucket * buckets
 				}
 				break;
 			case CL_BIMAP_BUCKET_OCCUPIED:
-				if (buckets[i].entry.post == post)
+				if ( COD_COMPARATOR( buckets[i].entry.post, post ) == 0 )
 					return &buckets[i];
 				break;
 			case CL_BIMAP_BUCKET_DELETED:
@@ -328,6 +377,7 @@ static inline struct BIMAPBucket * PREFIX_find_post(struct BIMAPBucket * buckets
  * @return On success, <code>0</code> is returned.
  * 	On error, <code>-1</code> is returned and the bimap remains unchanged.
  */
+static inline int PREFIX_add(BIMAP * bimap, DOM_TYPE pre, COD_TYPE post) WARN_UNUSED_RESULT;
 static inline int PREFIX_add(BIMAP * bimap, DOM_TYPE pre, COD_TYPE post) {
 	assert (bimap != NULL);
 
@@ -452,53 +502,73 @@ static inline const DOM_TYPE * PREFIX_pre(const BIMAP * bimap, COD_TYPE post) {
 }
 
 /**
- * Creates a new bimap iterator.
+ * Starts an iteration over a bimap.
  *
  * @param bimap Pointer to a bimap.
  *
- * @return An iterator for the map pointed to by <code>bimap</code> is returned.
+ * @return An opaque iteration handle for the map pinted to by bimap is
+ * 	returned. If the map is empty, NULL is returned.
  */
-static inline BMITER PREFIX_iterator_new(BIMAP * bimap) {
-	assert (bimap != NULL);
+static inline void * PREFIX_iterator_start( const BIMAP * bimap ) WARN_UNUSED_RESULT;
+static inline void * PREFIX_iterator_start( const BIMAP * bimap ) {
+	assert ( bimap != NULL );
 
-	return (BMITER) { .bimap = bimap, .index = 0 };
+	for ( size_t i = 0; i <= bimap->sizemask; ++i ) {
+		if ( bimap->dom_buckets[i].state == CL_BIMAP_BUCKET_OCCUPIED ) {
+			return &bimap->dom_buckets[i];
+		}
+	}
+
+	return NULL;
 }
 
 /**
- * Checks whether an iterator has a next element.
+ * Returns the current entry in an iteration.
  *
- * @return i Pointer to bimap iterator.
+ * @param bimap Pointer to bimap.
+ * @param iter Iteration handle for the specified bimap.
  *
- * @return If there is a next element in the iteration, <code>1</code> is returned.
- * 	Otherwise, <code>0</code> is returned.
+ * @return The current entry the iteration handle is pointing to is returned.
  */
-static inline int PREFIX_iterator_hasnext(BMITER * i) {
-	assert (i != NULL);
+static inline struct ENTRY_TYPE PREFIX_iterator_get( const BIMAP * bimap, void * iter ) {
+	assert( bimap != NULL );
+	assert( iter != NULL );
 
-	for (; i->index <= i->bimap->sizemask; ++i->index) {
-		if (i->bimap->dom_buckets[i->index].state == CL_BIMAP_BUCKET_OCCUPIED)
-			return 1;
-	}
+	struct BIMAPBucket * current = iter;
+	assert( ( bimap->dom_buckets <= current ) && ( current <= bimap->dom_buckets + bimap->sizemask ) );
 
-	return 0;
+	return current->entry;
 }
 
 /**
- * Returns the next mapping in an iteration.
+ * Returns the next element in a bimap iteration.
  *
- * @param i Pointer to bimap iterator.
+ * @param bimap Pointer to bimap.
+ * @param iter Iteration handle for the specified bimap.
  *
- * @return the next mapping in the iteration is returned.
- * 	If there is no next mapping, the behaviour is undefined.
+ * @return An iteration handle for the next element in the iteration is
+ * 	returned, or NULL if the current element was the last element in the
+ * 	iteration.
  */
-static inline struct ENTRY_TYPE PREFIX_iterator_next(BMITER * i) {
-	assert (i != NULL);
+static inline void * PREFIX_iterator_next( const BIMAP * bimap, void * iter ) WARN_UNUSED_RESULT;
+static inline void * PREFIX_iterator_next( const BIMAP * bimap, void * iter ) {
+	assert( bimap != NULL );
+	assert( iter != NULL );
 
-	for (;; ++i->index) {
-		assert (i->index <= i->bimap->sizemask);
-		if (i->bimap->dom_buckets[i->index].state == CL_BIMAP_BUCKET_OCCUPIED)
-			return i->bimap->dom_buckets[i->index++].entry;
+	struct BIMAPBucket * current = iter;
+	assert( ( bimap->dom_buckets <= current ) && ( current <= bimap->dom_buckets + bimap->sizemask ) );
+
+	for ( size_t i = current - bimap->dom_buckets + 1; i <= bimap->sizemask; ++i ) {
+		if ( bimap->dom_buckets[i].state == CL_BIMAP_BUCKET_OCCUPIED ) {
+			return &bimap->dom_buckets[i];
+		}
 	}
+
+	return NULL;
 }
+
+/* End of comparator hack */
+#undef DOM_COMPARATOR
+#undef COD_COMPARATOR
 
 #endif

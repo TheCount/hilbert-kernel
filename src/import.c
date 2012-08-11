@@ -60,8 +60,8 @@ static EQCSet * eqc_backup_create(struct HilbertModule * restrict module, ParamM
 	if (result == NULL)
 		goto noeqcsetmem;
 
-	for (ParamMapIterator i = hilbert_pmap_iterator_new(handle_map); hilbert_pmap_iterator_hasnext(&i);) {
-		struct ParamMapEntry entry = hilbert_pmap_iterator_next(&i);
+	for ( void * i = hilbert_pmap_iterator_start( handle_map ); i != NULL; i = hilbert_pmap_iterator_next( handle_map, i ) ) {
+		struct ParamMapEntry entry = hilbert_pmap_iterator_get( handle_map, i );
 		if (hilbert_iset_contains(already_handled, entry.pre))
 			continue;
 		union Object * object = hilbert_object_retrieve(module, entry.pre, HILBERT_TYPE_KIND);
@@ -83,8 +83,9 @@ static EQCSet * eqc_backup_create(struct HilbertModule * restrict module, ParamM
 	goto success;
 
 noeqcmem:
-	for (EQCSetIterator i = hilbert_eset_iterator_new(result); hilbert_eset_iterator_hasnext(&i);)
-		hilbert_iset_del(hilbert_eset_iterator_next(&i));
+	for ( void * i = hilbert_eset_iterator_start( result ); i != NULL; i = hilbert_eset_iterator_next( result, i ) ) {
+		hilbert_iset_del( hilbert_eset_iterator_get( result, i ) );
+	}
 	hilbert_eset_del(result);
 	result = NULL;
 success:
@@ -113,16 +114,15 @@ static void eqc_backup_restore(struct HilbertModule * restrict module, ParamMap 
 	assert (backup != NULL);
 
 	/* reset current equivalence classes to NULL */
-	for (ParamMapIterator i = hilbert_pmap_iterator_new(handle_map); hilbert_pmap_iterator_hasnext(&i);) {
-		struct ParamMapEntry entry = hilbert_pmap_iterator_next(&i);
+	for ( void * i = hilbert_pmap_iterator_start( handle_map ); i != NULL; i = hilbert_pmap_iterator_next( handle_map, i ) ) {
+		struct ParamMapEntry entry = hilbert_pmap_iterator_get( handle_map, i );
 		union Object * object = hilbert_object_retrieve(module, entry.pre, HILBERT_TYPE_KIND);
 		assert (object != NULL);
 		IndexSet * equivalence_class = object->kind.equivalence_class;
 		if (equivalence_class == NULL)
 			continue;
-		for (IndexSetIterator j = hilbert_iset_iterator_new(equivalence_class);
-				hilbert_iset_iterator_hasnext(&j);) {
-			HilbertHandle kindhandle = hilbert_iset_iterator_next(&j);
+		for ( void * j = hilbert_iset_iterator_start( equivalence_class ); j != NULL; j = hilbert_iset_iterator_next( equivalence_class, j ) ) {
+			HilbertHandle kindhandle = hilbert_iset_iterator_get( equivalence_class, j );
 			union Object * object2 = hilbert_object_retrieve(module, kindhandle, HILBERT_TYPE_KIND);
 			assert (object2 != NULL);
 			object2->kind.equivalence_class = NULL;
@@ -131,12 +131,11 @@ static void eqc_backup_restore(struct HilbertModule * restrict module, ParamMap 
 	}
 
 	/* restore backup */
-	for (EQCSetIterator i = hilbert_eset_iterator_new(backup); hilbert_eset_iterator_hasnext(&i);) {
-		IndexSet * equivalence_class = hilbert_eset_iterator_next(&i);
+	for ( void * i = hilbert_eset_iterator_start( backup ); i != NULL; i = hilbert_eset_iterator_next( backup, i ) ) {
+		IndexSet * equivalence_class = hilbert_eset_iterator_get( backup, i );
 		assert (equivalence_class != NULL);
-		for (IndexSetIterator j = hilbert_iset_iterator_new(equivalence_class);
-				hilbert_iset_iterator_hasnext(&j);) {
-			HilbertHandle kindhandle = hilbert_iset_iterator_next(&j);
+		for ( void * j = hilbert_iset_iterator_start( equivalence_class ); j != NULL; j = hilbert_iset_iterator_next( equivalence_class, j ) ) {
+			HilbertHandle kindhandle = hilbert_iset_iterator_get( equivalence_class, j );
 			union Object * object = hilbert_object_retrieve(module, kindhandle, HILBERT_TYPE_KIND);
 			assert (object != NULL);
 			object->kind.equivalence_class = equivalence_class;
@@ -158,8 +157,9 @@ static void eqc_backup_restore(struct HilbertModule * restrict module, ParamMap 
 static void eqc_backup_free(EQCSet * backup) {
 	assert (backup != NULL);
 
-	for (EQCSetIterator i = hilbert_eset_iterator_new(backup); hilbert_eset_iterator_hasnext(&i);)
-		hilbert_iset_del(hilbert_eset_iterator_next(&i));
+	for ( void * i = hilbert_eset_iterator_start( backup ); i != NULL; i = hilbert_eset_iterator_next( backup, i ) ) {
+		hilbert_iset_del( hilbert_eset_iterator_get( backup, i ) );
+	}
 
 	hilbert_eset_del(backup);
 }
@@ -198,9 +198,8 @@ static int load_kinds(HilbertModule * restrict dest, HilbertModule * restrict sr
 	}
 
 	/* inspect all source kinds */
-	for (IndexVectorIterator i = hilbert_ivector_iterator_new(src->kindhandles);
-			hilbert_ivector_iterator_hasnext(&i);) {
-		HilbertHandle srckindhandle = hilbert_ivector_iterator_next(&i);
+	for ( void * i = hilbert_ivector_iterator_start( src->kindhandles ); i != NULL; i = hilbert_ivector_iterator_next( src->kindhandles, i ) ) {
+		HilbertHandle srckindhandle = hilbert_ivector_iterator_get( src->kindhandles, i );
 		union Object * srcobject = hilbert_ovector_get(src->objects, srckindhandle);
 		assert (srcobject->generic.type & HILBERT_TYPE_KIND);
 		if (srcobject->generic.type & HILBERT_TYPE_EXTERNAL) {
@@ -266,16 +265,16 @@ static int load_kinds(HilbertModule * restrict dest, HilbertModule * restrict sr
 		errcode = HILBERT_ERR_NOMEM;
 		goto nobackupmem;
 	}
-	for (ParamMapIterator i = hilbert_pmap_iterator_new(param->handle_map); hilbert_pmap_iterator_hasnext(&i);) {
-		struct ParamMapEntry entry = hilbert_pmap_iterator_next(&i);
+	for ( void * i = hilbert_pmap_iterator_start( param->handle_map ); i != NULL; i = hilbert_pmap_iterator_next( param->handle_map, i ) ) {
+		struct ParamMapEntry entry = hilbert_pmap_iterator_get( param->handle_map, i );
 		if (hilbert_iset_contains(already_handled, entry.post))
 			continue;
 		union Object * srcobject = hilbert_object_retrieve(src, entry.post, HILBERT_TYPE_KIND);
 		assert (srcobject != NULL);
 		struct Kind * srckind = &srcobject->kind;
 		if (srckind->equivalence_class != NULL) {
-			for (IndexSetIterator j = hilbert_iset_iterator_new(srckind->equivalence_class); hilbert_iset_iterator_hasnext(&j);) {
-				HilbertHandle srckindhandle = hilbert_iset_iterator_next(&j);
+			for ( void * j = hilbert_iset_iterator_start( srckind->equivalence_class ); j != NULL; j = hilbert_iset_iterator_next( srckind->equivalence_class, j ) ) {
+				HilbertHandle srckindhandle = hilbert_iset_iterator_get( srckind->equivalence_class, j );
 				const HilbertHandle * destkindhandle = hilbert_pmap_pre(param->handle_map, srckindhandle);
 				assert (destkindhandle != NULL);
 				errcode = hilbert_kind_identify_nocheck(dest, entry.pre, *destkindhandle);
@@ -329,8 +328,8 @@ static int load_functors(HilbertModule * restrict dest, HilbertModule * restrict
 	int errcode;
 
 	/* Inspect all source functors */
-	for (IndexVectorIterator i = hilbert_ivector_iterator_new(src->functorhandles); hilbert_ivector_iterator_hasnext(&i);) {
-		HilbertHandle srcfunctorhandle = hilbert_ivector_iterator_next(&i);
+	for ( void * i = hilbert_ivector_iterator_start( src->functorhandles ); i != NULL; i = hilbert_ivector_iterator_next( src->functorhandles, i ) ) {
+		HilbertHandle srcfunctorhandle = hilbert_ivector_iterator_get( src->functorhandles, i );
 		union Object * srcobject = hilbert_ovector_get(src->objects, srcfunctorhandle);
 		assert (srcobject->generic.type & HILBERT_TYPE_FUNCTOR);
 		if (srcobject->generic.type & HILBERT_TYPE_EXTERNAL) {

@@ -427,8 +427,8 @@ static inline int hilbert_kind_identify_nocheck(struct HilbertModule * module, H
 	if (object2->kind.equivalence_class != NULL)
 		hilbert_iset_del(object2->kind.equivalence_class);
 	/* update all affected equivalence classes */
-	for (IndexSetIterator i = hilbert_iset_iterator_new(equivalence_class); hilbert_iset_iterator_hasnext(&i);) {
-		HilbertHandle handle = hilbert_iset_iterator_next(&i);
+	for ( void * i = hilbert_iset_iterator_start( equivalence_class ); i != NULL; i = hilbert_iset_iterator_next( equivalence_class, i ) ) {
+		HilbertHandle handle = hilbert_iset_iterator_get( equivalence_class, i );
 		union Object * object = hilbert_object_retrieve(module, handle, ~0U);
 		assert (object->generic.type & HILBERT_TYPE_KIND);
 		object->kind.equivalence_class = equivalence_class;

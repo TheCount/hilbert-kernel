@@ -596,18 +596,18 @@ struct HilbertExpression ** hilbert_expression_subexpressions(struct HilbertExpr
 		goto unfinishedexpr;
 	}
 
-	IndexVectorIterator i = hilbert_ivector_iterator_new(expr->handles);
-	assert (hilbert_ivector_iterator_hasnext(&i));
-	hilbert_ivector_iterator_next(&i); /* discard head */
-	while (hilbert_ivector_iterator_hasnext(&i)) {
+	void * i = hilbert_ivector_iterator_start( expr->handles );
+	assert ( i != NULL );
+	i = hilbert_ivector_iterator_next( expr->handles, i ); /* discard head */
+	while ( i != NULL ) {
 		struct HilbertExpression * subexpr = hilbert_expression_start(expr->module, errcode);
 		if (*errcode != 0) {
 			assert (*errcode == HILBERT_ERR_NOMEM);
 			goto nosubexprmem;
 		}
 		while ((hilbert_expression_gettype(subexpr, errcode) == HILBERT_UNFINISHED_EXPRESSION) && (*errcode == 0)) {
-			assert (hilbert_ivector_iterator_hasnext(&i));
-			hilbert_expression_add(subexpr, hilbert_ivector_iterator_next(&i), errcode);
+			assert ( i != NULL );
+			hilbert_expression_add(subexpr, hilbert_ivector_iterator_get( expr->handles, i ), errcode);
 			if (*errcode != 0) {
 				assert (*errcode == HILBERT_ERR_NOMEM);
 				hilbert_expression_free(subexpr);
@@ -638,15 +638,17 @@ struct HilbertExpression ** hilbert_expression_subexpressions(struct HilbertExpr
 noarraymem:
 subexprinternalerror:
 nosubexprmem:
-	for (ExpressionVectorIterator i = hilbert_evector_iterator_new(evector); hilbert_evector_iterator_hasnext(&i);)
-		hilbert_expression_free(hilbert_evector_iterator_next(&i));
+	for ( void * i = hilbert_evector_iterator_start( evector ); i != NULL; i = hilbert_evector_iterator_next( evector, i) ) {
+		hilbert_expression_free( hilbert_evector_iterator_get( evector, i ) );
+	}
 	hilbert_evector_downsize(evector, 0); /* avoid double free */
 unfinishedexpr:
 success:
 	if (mtx_unlock(&expr->mutex)) {
 		*errcode = HILBERT_ERR_INTERNAL;
-		for (ExpressionVectorIterator i = hilbert_evector_iterator_new(evector); hilbert_evector_iterator_hasnext(&i);)
-			hilbert_expression_free(hilbert_evector_iterator_next(&i));
+		for ( void * i = hilbert_evector_iterator_start( evector ); i != NULL; i = hilbert_evector_iterator_next( evector, i ) ) {
+			hilbert_expression_free( hilbert_evector_iterator_get( evector, i ) );
+		}
 		free(result);
 	}
 nolock:
@@ -729,8 +731,8 @@ HilbertHandle * hilbert_expression_variables(struct HilbertExpression * restrict
 		goto nolock;
 	}
 
-	for (IndexVectorIterator i = hilbert_ivector_iterator_new(expr->handles); hilbert_ivector_iterator_hasnext(&i);) {
-		HilbertHandle handle = hilbert_ivector_iterator_next(&i);
+	for ( void * i = hilbert_ivector_iterator_start( expr->handles ); i != NULL; i = hilbert_ivector_iterator_next( expr->handles, i ) ) {
+		HilbertHandle handle = hilbert_ivector_iterator_get( expr->handles, i );
 		unsigned int type = hilbert_object_gettype(expr->module, handle, errcode);
 		if (*errcode != 0) {
 			assert (*errcode == HILBERT_ERR_INTERNAL);
