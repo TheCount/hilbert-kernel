@@ -1,6 +1,6 @@
 dnl
 dnl The Hilbert Kernel Library, a library for verifying formal proofs.
-dnl Copyright © 2011 Alexander Klauer
+dnl Copyright © 2011, 2012 Alexander Klauer
 dnl
 dnl This program is free software: you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
