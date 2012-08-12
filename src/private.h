@@ -268,7 +268,7 @@ struct HilbertModule {
 	/**
 	 * Mutual exclusion device.
 	 */
-	HILBERT_MUTEX_DECL(mutex);
+	HILBERT_MUTEX_DECL( mutex )
 
 	/**
 	 * Whether this module is immutable.
@@ -328,7 +328,7 @@ struct HilbertExpression {
 	/**
 	 * Mutual exclusion device.
 	 */
-	HILBERT_MUTEX_DECL(mutex);
+	HILBERT_MUTEX_DECL( mutex )
 
 	/**
 	 * Module the expression is based on.

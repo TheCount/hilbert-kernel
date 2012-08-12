@@ -81,7 +81,7 @@ enum {
 
 #else /* HILBERT_THREADSAFE is defined */
 
-#define HILBERT_MUTEX_DECL(x) mtx_t x
+#define HILBERT_MUTEX_DECL(x) mtx_t x;
 
 // #ifdef __STDC_NO_THREADS__ 
 #include"threads.h"
