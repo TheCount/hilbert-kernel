@@ -576,8 +576,6 @@ struct HilbertExpression ** hilbert_expression_subexpressions(struct HilbertExpr
 	assert (count != NULL);
 	assert (errcode != NULL);
 
-	struct HilbertExpression ** result = NULL;
-
 	ExpressionVector evector;
 	*errcode = hilbert_evector_init( &evector );
 	if ( *errcode != 0 ) {
@@ -625,16 +623,19 @@ struct HilbertExpression ** hilbert_expression_subexpressions(struct HilbertExpr
 	}
 
 	*count = hilbert_evector_count( &evector );
-	result = hilbert_evector_toarray( &evector );
-	if ((*count > 0) && (result == NULL)) {
-		*errcode = HILBERT_ERR_NOMEM;
-		goto noarraymem;
+	struct HilbertExpression ** result = hilbert_evector_dismantle( &evector );
+	*errcode = 0;
+	if ( mtx_unlock( &expr->mutex ) != thrd_success ) {
+		*errcode = HILBERT_ERR_INTERNAL;
+		for ( size_t i = 0; i != *count; ++i ) {
+			hilbert_expression_free( result[i] );
+		}
+		free( result );
+		result = NULL;
 	}
 
-	*errcode = 0;
-	goto success;
+	return result;
 
-noarraymem:
 subexprinternalerror:
 nosubexprmem:
 	for ( void * i = hilbert_evector_iterator_start( &evector ); i != NULL; i = hilbert_evector_iterator_next( &evector, i) ) {
@@ -642,18 +643,16 @@ nosubexprmem:
 	}
 	hilbert_evector_downsize( &evector, 0 ); /* avoid double free */
 unfinishedexpr:
-success:
-	if (mtx_unlock(&expr->mutex)) {
+	if ( mtx_unlock( &expr->mutex) != thrd_success ) {
 		*errcode = HILBERT_ERR_INTERNAL;
 		for ( void * i = hilbert_evector_iterator_start( &evector ); i != NULL; i = hilbert_evector_iterator_next( &evector, i ) ) {
 			hilbert_expression_free( hilbert_evector_iterator_get( &evector, i ) );
 		}
-		free(result);
 	}
 nolock:
 	hilbert_evector_fini( &evector );
 noevectormem:
-	return result;
+	return NULL;
 }
 
 size_t hilbert_expression_getlength(struct HilbertExpression * restrict expr, int * restrict errcode) {
