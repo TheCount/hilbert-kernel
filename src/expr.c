@@ -710,8 +710,6 @@ HilbertHandle * hilbert_expression_variables(struct HilbertExpression * restrict
 	assert (count != NULL);
 	assert (errcode != NULL);
 
-	HilbertHandle * result = NULL;
-
 	IndexSet varset;
 	*errcode = hilbert_iset_init( &varset );
 	if ( *errcode != 0 ) {
@@ -755,27 +753,30 @@ HilbertHandle * hilbert_expression_variables(struct HilbertExpression * restrict
 	}
 
 	*count = hilbert_ivector_count( &varvector );
-	result = hilbert_ivector_toarray( &varvector );
-	if ((*count > 0) && (result == NULL)) {
-		*errcode = HILBERT_ERR_NOMEM;
-		goto noresultmem;
-	}
+	HilbertHandle * result = hilbert_ivector_dismantle( &varvector );
 	*errcode = 0;
 
-noresultmem:
+	if ( mtx_unlock( &expr->mutex ) != thrd_success ) {
+		*errcode = HILBERT_ERR_INTERNAL;
+		free( result );
+		result = NULL;
+	}
+
+	hilbert_iset_fini( &varset );
+	return result;
+
 nohvmem:
 nohsmem:
 typeerr:
 	if (mtx_unlock(&expr->mutex) != thrd_success) {
 		*errcode = HILBERT_ERR_INTERNAL;
-		free(result);
 	}
 nolock:
 	hilbert_ivector_fini( &varvector );
 novvmem:
 	hilbert_iset_fini( &varset );
 novsmem:
-	return result;
+	return NULL;
 }
 
 void hilbert_expression_free(struct HilbertExpression * expr) {
