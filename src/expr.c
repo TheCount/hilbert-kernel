@@ -95,13 +95,12 @@ static int build_expression_from_functor(struct HilbertExpression * restrict exp
 	assert (expr != NULL);
 	assert (expr->module != NULL);
 	assert (expr->kindstack == NULL);
-	assert (expr->handles != NULL);
-	assert (hilbert_ivector_count(expr->handles) == 0);
+	assert ( hilbert_ivector_count( &expr->handles ) == 0 );
 	assert ((count == 0) || (subexpr != NULL));
 
 	int errcode;
 
-	if (hilbert_ivector_pushback(expr->handles, head) != 0) {
+	if ( hilbert_ivector_pushback( &expr->handles, head ) != 0 ) {
 		errcode = HILBERT_ERR_NOMEM;
 		goto noheadmem;
 	}
@@ -135,7 +134,7 @@ static int build_expression_from_functor(struct HilbertExpression * restrict exp
 			errcode = HILBERT_ERR_NO_EQUIVALENCE;
 			goto noequiv;
 		}
-		if (hilbert_ivector_append(expr->handles, subexpr[i]->handles) != 0) {
+		if ( hilbert_ivector_append( &expr->handles, &subexpr[i]->handles ) != 0 ) {
 			errcode = HILBERT_ERR_NOMEM;
 			goto nohandlesmem;
 		}
@@ -180,8 +179,8 @@ struct HilbertExpression * hilbert_expression_create(struct HilbertModule * rest
 	expr->module = module;
 	expr->kindstack = NULL;
 
-	expr->handles = hilbert_ivector_new();
-	if (expr->handles == NULL) {
+	*errcode = hilbert_ivector_init( &expr->handles );
+	if ( *errcode != 0 ) {
 		*errcode = HILBERT_ERR_NOMEM;
 		goto nohandlesmem;
 	}
@@ -197,7 +196,7 @@ struct HilbertExpression * hilbert_expression_create(struct HilbertModule * rest
 			*errcode = HILBERT_ERR_COUNT_MISMATCH;
 			goto countmismatch;
 		}
-		if (hilbert_ivector_pushback(expr->handles, head) != 0) {
+		if ( hilbert_ivector_pushback( &expr->handles, head ) != 0 ) {
 			*errcode = HILBERT_ERR_NOMEM;
 			goto noheadmem;
 		}
@@ -217,7 +216,7 @@ functorerr:
 noheadmem:
 countmismatch:
 headtypeerr:
-	hilbert_ivector_del(expr->handles);
+	hilbert_ivector_fini( &expr->handles );
 nohandlesmem:
 	mtx_destroy(&expr->mutex);
 nomutexmem:
@@ -252,8 +251,8 @@ struct HilbertExpression * hilbert_expression_start(struct HilbertModule * restr
 		goto nokindstackmem;
 	}
 
-	expr->handles = hilbert_ivector_new();
-	if (expr->handles == NULL) {
+	*errcode = hilbert_ivector_init( &expr->handles );
+	if ( *errcode != 0 ) {
 		*errcode = HILBERT_ERR_NOMEM;
 		goto nohandlesmem;
 	}
@@ -301,7 +300,7 @@ static int add_variable_to_expression(struct HilbertExpression * expr, HilbertHa
 		--kssize; /* expr->kindstack downsized below */
 	}
 
-	if (hilbert_ivector_pushback(expr->handles, varhandle) != 0) {
+	if ( hilbert_ivector_pushback( &expr->handles, varhandle ) != 0 ) {
 		errcode = HILBERT_ERR_NOMEM;
 		goto nomem;
 	}
@@ -351,8 +350,8 @@ static int add_functor_to_expression(struct HilbertExpression * expr, HilbertHan
 		assert (rc == 0);
 	}
 
-	size_t oldhsize = hilbert_ivector_count(expr->handles);
-	if (hilbert_ivector_pushback(expr->handles, functorhandle) != 0) {
+	size_t oldhsize = hilbert_ivector_count( &expr->handles );
+	if ( hilbert_ivector_pushback( &expr->handles, functorhandle ) != 0 ) {
 		errcode = HILBERT_ERR_NOMEM;
 		goto nohmem;
 	}
@@ -370,7 +369,7 @@ static int add_functor_to_expression(struct HilbertExpression * expr, HilbertHan
 	goto success;
 
 noksmem:
-	rc = hilbert_ivector_downsize(expr->handles, oldhsize);
+	rc = hilbert_ivector_downsize( &expr->handles, oldhsize );
 	assert (rc == 0);
 nohmem:
 	if (kssize > 0) {
@@ -471,8 +470,8 @@ struct HilbertExpression * hilbert_expression_fromarray(struct HilbertModule * r
 		goto noksmem;
 	}
 
-	expr->handles = hilbert_ivector_new();
-	if (expr->handles == NULL) {
+	*errcode = hilbert_ivector_init( &expr->handles );
+	if ( *errcode != 0 ) {
 		*errcode = HILBERT_ERR_NOMEM;
 		goto nohmem;
 	}
@@ -497,7 +496,7 @@ struct HilbertExpression * hilbert_expression_fromarray(struct HilbertModule * r
 
 invalidexpr:
 adderror:
-	hilbert_ivector_del(expr->handles);
+	hilbert_ivector_fini( &expr->handles );
 nohmem:
 	hilbert_ivector_del(expr->kindstack);
 noksmem:
@@ -552,9 +551,8 @@ HilbertHandle hilbert_expression_getkind(struct HilbertExpression * restrict exp
 		goto unfinishedexpr;
 	}
 
-	assert (expr->handles != NULL);
-	assert (hilbert_ivector_count(expr->handles) > 0);
-	HilbertHandle head = hilbert_ivector_get(expr->handles, 0);
+	assert( hilbert_ivector_count( &expr->handles ) > 0 );
+	HilbertHandle head = hilbert_ivector_get( &expr->handles, 0 );
 	unsigned int type = hilbert_object_gettype(expr->module, head, errcode);
 	assert (*errcode == 0);
 	assert (type & (HILBERT_TYPE_VAR | HILBERT_TYPE_FUNCTOR));
@@ -580,8 +578,9 @@ struct HilbertExpression ** hilbert_expression_subexpressions(struct HilbertExpr
 
 	struct HilbertExpression ** result = NULL;
 
-	ExpressionVector * evector = hilbert_evector_new();
-	if (evector == NULL) {
+	ExpressionVector evector;
+	*errcode = hilbert_evector_init( &evector );
+	if ( *errcode != 0 ) {
 		*errcode = HILBERT_ERR_NOMEM;
 		goto noevectormem;
 	}
@@ -596,9 +595,9 @@ struct HilbertExpression ** hilbert_expression_subexpressions(struct HilbertExpr
 		goto unfinishedexpr;
 	}
 
-	void * i = hilbert_ivector_iterator_start( expr->handles );
+	void * i = hilbert_ivector_iterator_start( &expr->handles );
 	assert ( i != NULL );
-	i = hilbert_ivector_iterator_next( expr->handles, i ); /* discard head */
+	i = hilbert_ivector_iterator_next( &expr->handles, i ); /* discard head */
 	while ( i != NULL ) {
 		struct HilbertExpression * subexpr = hilbert_expression_start(expr->module, errcode);
 		if (*errcode != 0) {
@@ -607,7 +606,7 @@ struct HilbertExpression ** hilbert_expression_subexpressions(struct HilbertExpr
 		}
 		while ((hilbert_expression_gettype(subexpr, errcode) == HILBERT_UNFINISHED_EXPRESSION) && (*errcode == 0)) {
 			assert ( i != NULL );
-			hilbert_expression_add(subexpr, hilbert_ivector_iterator_get( expr->handles, i ), errcode);
+			hilbert_expression_add( subexpr, hilbert_ivector_iterator_get( &expr->handles, i ), errcode );
 			if (*errcode != 0) {
 				assert (*errcode == HILBERT_ERR_NOMEM);
 				hilbert_expression_free(subexpr);
@@ -618,15 +617,15 @@ struct HilbertExpression ** hilbert_expression_subexpressions(struct HilbertExpr
 			assert (*errcode == HILBERT_ERR_INTERNAL);
 			goto subexprinternalerror;
 		}
-		if (hilbert_evector_pushback(evector, subexpr) != 0) {
+		if ( hilbert_evector_pushback( &evector, subexpr ) != 0 ) {
 			*errcode = HILBERT_ERR_NOMEM;
 			hilbert_expression_free(subexpr);
 			goto nosubexprmem;
 		}
 	}
 
-	*count = hilbert_evector_count(evector);
-	result = hilbert_evector_toarray(evector);
+	*count = hilbert_evector_count( &evector );
+	result = hilbert_evector_toarray( &evector );
 	if ((*count > 0) && (result == NULL)) {
 		*errcode = HILBERT_ERR_NOMEM;
 		goto noarraymem;
@@ -638,21 +637,21 @@ struct HilbertExpression ** hilbert_expression_subexpressions(struct HilbertExpr
 noarraymem:
 subexprinternalerror:
 nosubexprmem:
-	for ( void * i = hilbert_evector_iterator_start( evector ); i != NULL; i = hilbert_evector_iterator_next( evector, i) ) {
-		hilbert_expression_free( hilbert_evector_iterator_get( evector, i ) );
+	for ( void * i = hilbert_evector_iterator_start( &evector ); i != NULL; i = hilbert_evector_iterator_next( &evector, i) ) {
+		hilbert_expression_free( hilbert_evector_iterator_get( &evector, i ) );
 	}
-	hilbert_evector_downsize(evector, 0); /* avoid double free */
+	hilbert_evector_downsize( &evector, 0 ); /* avoid double free */
 unfinishedexpr:
 success:
 	if (mtx_unlock(&expr->mutex)) {
 		*errcode = HILBERT_ERR_INTERNAL;
-		for ( void * i = hilbert_evector_iterator_start( evector ); i != NULL; i = hilbert_evector_iterator_next( evector, i ) ) {
-			hilbert_expression_free( hilbert_evector_iterator_get( evector, i ) );
+		for ( void * i = hilbert_evector_iterator_start( &evector ); i != NULL; i = hilbert_evector_iterator_next( &evector, i ) ) {
+			hilbert_expression_free( hilbert_evector_iterator_get( &evector, i ) );
 		}
 		free(result);
 	}
 nolock:
-	hilbert_evector_del(evector);
+	hilbert_evector_fini( &evector );
 noevectormem:
 	return result;
 }
@@ -668,7 +667,7 @@ size_t hilbert_expression_getlength(struct HilbertExpression * restrict expr, in
 		goto nolock;
 	}
 
-	result = hilbert_ivector_count(expr->handles);
+	result = hilbert_ivector_count( &expr->handles );
 	*errcode = 0;
 
 	if (mtx_unlock(&expr->mutex) != thrd_success)
@@ -689,8 +688,8 @@ HilbertHandle * hilbert_expression_toarray(struct HilbertExpression * restrict e
 		goto nolock;
 	}
 
-	*length = hilbert_ivector_count(expr->handles);
-	result = hilbert_ivector_toarray(expr->handles);
+	*length = hilbert_ivector_count( &expr->handles );
+	result = hilbert_ivector_toarray( &expr->handles );
 	if ((*length > 0) && (result == NULL)) {
 		*errcode = HILBERT_ERR_NOMEM;
 		goto nomem;
@@ -714,14 +713,16 @@ HilbertHandle * hilbert_expression_variables(struct HilbertExpression * restrict
 
 	HilbertHandle * result = NULL;
 
-	IndexSet * varset = hilbert_iset_new();
-	if (varset == NULL) {
+	IndexSet varset;
+	*errcode = hilbert_iset_init( &varset );
+	if ( *errcode != 0 ) {
 		*errcode = HILBERT_ERR_NOMEM;
 		goto novsmem;
 	}
 
-	IndexVector * varvector = hilbert_ivector_new();
-	if (varvector == NULL) {
+	IndexVector varvector;
+	*errcode = hilbert_ivector_init( &varvector );
+	if ( *errcode != 0 ) {
 		*errcode = HILBERT_ERR_NOMEM;
 		goto novvmem;
 	}
@@ -731,8 +732,8 @@ HilbertHandle * hilbert_expression_variables(struct HilbertExpression * restrict
 		goto nolock;
 	}
 
-	for ( void * i = hilbert_ivector_iterator_start( expr->handles ); i != NULL; i = hilbert_ivector_iterator_next( expr->handles, i ) ) {
-		HilbertHandle handle = hilbert_ivector_iterator_get( expr->handles, i );
+	for ( void * i = hilbert_ivector_iterator_start( &expr->handles ); i != NULL; i = hilbert_ivector_iterator_next( &expr->handles, i ) ) {
+		HilbertHandle handle = hilbert_ivector_iterator_get( &expr->handles, i );
 		unsigned int type = hilbert_object_gettype(expr->module, handle, errcode);
 		if (*errcode != 0) {
 			assert (*errcode == HILBERT_ERR_INTERNAL);
@@ -741,20 +742,21 @@ HilbertHandle * hilbert_expression_variables(struct HilbertExpression * restrict
 		if (type & HILBERT_TYPE_FUNCTOR)
 			continue;
 		assert (type & HILBERT_TYPE_VAR);
-		if (hilbert_iset_contains(varset, handle))
+		if ( hilbert_iset_contains( &varset, handle ) ) {
 			continue;
-		if (hilbert_iset_add(varset, handle) != 0) {
+		}
+		if ( hilbert_iset_add( &varset, handle ) != 0 ) {
 			*errcode = HILBERT_ERR_NOMEM;
 			goto nohsmem;
 		}
-		if (hilbert_ivector_pushback(varvector, handle) != 0) {
+		if ( hilbert_ivector_pushback( &varvector, handle ) != 0 ) {
 			*errcode = HILBERT_ERR_NOMEM;
 			goto nohvmem;
 		}
 	}
 
-	*count = hilbert_ivector_count(varvector);
-	result = hilbert_ivector_toarray(varvector);
+	*count = hilbert_ivector_count( &varvector );
+	result = hilbert_ivector_toarray( &varvector );
 	if ((*count > 0) && (result == NULL)) {
 		*errcode = HILBERT_ERR_NOMEM;
 		goto noresultmem;
@@ -770,9 +772,9 @@ typeerr:
 		free(result);
 	}
 nolock:
-	hilbert_ivector_del(varvector);
+	hilbert_ivector_fini( &varvector );
 novvmem:
-	hilbert_iset_del(varset);
+	hilbert_iset_fini( &varset );
 novsmem:
 	return result;
 }
@@ -780,7 +782,7 @@ novsmem:
 void hilbert_expression_free(struct HilbertExpression * expr) {
 	assert (expr != NULL);
 
-	hilbert_ivector_del(expr->handles);
+	hilbert_ivector_fini( &expr->handles );
 	if (expr->kindstack != NULL)
 		hilbert_ivector_del(expr->kindstack);
 	mtx_destroy(&expr->mutex);

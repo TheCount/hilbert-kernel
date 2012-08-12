@@ -65,19 +65,19 @@ HilbertHandle hilbert_var_create(struct HilbertModule * restrict module, Hilbert
 	}
 	object->var = (struct Variable) { .type = HILBERT_TYPE_VAR, .kind = kind };
 
-	result = hilbert_ovector_count(module->objects);
+	result = hilbert_ovector_count( &module->objects );
 	if (result > HILBERT_HANDLE_MAX) {
 		*errcode = HILBERT_ERR_INTERNAL;
 		goto nohandle;
 	}
 
-	*errcode = hilbert_ovector_pushback(module->objects, object);
+	*errcode = hilbert_ovector_pushback( &module->objects, object );
 	if (*errcode != 0) {
 		*errcode = HILBERT_ERR_NOMEM;
 		goto noobjectmem;
 	}
 
-	*errcode = hilbert_ivector_pushback(module->varhandles, result);
+	*errcode = hilbert_ivector_pushback( &module->varhandles, result );
 	if (*errcode != 0) {
 		*errcode = HILBERT_ERR_NOMEM;
 		goto nohandlemem;
@@ -86,7 +86,7 @@ HilbertHandle hilbert_var_create(struct HilbertModule * restrict module, Hilbert
 	goto success;
 
 nohandlemem:
-	hilbert_ovector_popback(module->objects);
+	hilbert_ovector_popback( &module->objects );
 noobjectmem:
 nohandle:
 	free(object);

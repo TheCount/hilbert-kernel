@@ -102,7 +102,7 @@ struct Variable {
  */
 struct BasicFunctor {
 	/**
-	 * Basic functor type (#HILBERT_TYPE_FUNCTOR)
+	 * Basic functor type (#HILBERT_TYPE_FUNCTOR).
 	 */
 	unsigned int type;
 
@@ -169,7 +169,7 @@ struct Param {
 	/**
 	 * Map mapping local handles to handles of <code>module</code>.
 	 */
-	ParamMap * handle_map;
+	ParamMap handle_map;
 };
 
 /**
@@ -220,7 +220,7 @@ static inline void hilbert_functor_free(union Object * functor) {
  * @param param Pointer to a previously allocated parameter.
  */
 static inline void hilbert_param_free(union Object * param) {
-	hilbert_pmap_del(param->param.handle_map);
+	hilbert_pmap_fini( &param->param.handle_map );
 	free(param);
 }
 
@@ -288,37 +288,37 @@ struct HilbertModule {
 	/**
 	 * Module constituents.
 	 */
-	ObjectVector * objects;
+	ObjectVector objects;
 
 	/**
 	 * Kind handles.
 	 */
-	IndexVector * kindhandles;
+	IndexVector kindhandles;
 
 	/**
 	 * Variable handles.
 	 */
-	IndexVector * varhandles;
+	IndexVector varhandles;
 
 	/**
 	 * Functor handles.
 	 */
-	IndexVector * functorhandles;
+	IndexVector functorhandles;
 
 	/**
 	 * Parameter handles.
 	 */
-	IndexVector * paramhandles;
+	IndexVector paramhandles;
 
 	/**
 	 * Set of modules this module depends on.
 	 */
-	ModuleSet * dependencies;
+	ModuleSet dependencies;
 
 	/**
 	 * Set of modules depending on this module.
 	 */
-	ModuleSet * reverse_dependencies;
+	ModuleSet reverse_dependencies;
 };
 
 /**
@@ -344,7 +344,7 @@ struct HilbertExpression {
 	/**
 	 * Expression in forward Polish representation
 	 */
-	IndexVector * handles;
+	IndexVector handles;
 };
 
 /**
@@ -361,10 +361,10 @@ struct HilbertExpression {
 static inline union Object * hilbert_object_retrieve(const struct HilbertModule * module, HilbertHandle handle, unsigned int typeflags) {
 	assert (module != NULL);
 
-	size_t numobjects = hilbert_ovector_count(module->objects);
+	size_t numobjects = hilbert_ovector_count( &module->objects );
 	if (handle >= numobjects)
 		return NULL;
-	union Object * result = hilbert_ovector_get(module->objects, handle);
+	union Object * result = hilbert_ovector_get( &module->objects, handle );
 	if (!(result->generic.type & typeflags))
 		return NULL;
 	return result;

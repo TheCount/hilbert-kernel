@@ -55,48 +55,51 @@ HilbertModule * hilbert_module_create(enum HilbertModuleType type) {
 	module->freeable = 0;
 	module->ancillary = NULL;
 
-	module->objects = hilbert_ovector_new();
-	if (module->objects == NULL)
+	errcode = hilbert_ovector_init( &module->objects );
+	if ( errcode != 0 )
 		goto noobjectmem;
 
-	module->kindhandles = hilbert_ivector_new();
-	if (module->kindhandles == NULL)
+	errcode = hilbert_ivector_init( &module->kindhandles );
+	if ( errcode != 0 )
 		goto nokindhandlesmem;
 
-	module->varhandles = hilbert_ivector_new();
-	if (module->varhandles == NULL)
+	errcode = hilbert_ivector_init( &module->varhandles );
+	if ( errcode != 0 )
 		goto novarhandlesmem;
 
-	module->functorhandles = hilbert_ivector_new();
-	if (module->functorhandles == NULL)
+	errcode = hilbert_ivector_init( &module->functorhandles );
+	if ( errcode != 0 )
 		goto nofunctorhandlesmem;
 
-	module->paramhandles = hilbert_ivector_new();
-	if (module->paramhandles == NULL)
+	errcode = hilbert_ivector_init( &module->paramhandles );
+	if ( errcode != 0 ) {
 		goto noparamhandlesmem;
+	}
 
-	module->dependencies = hilbert_mset_new();
-	if (module->dependencies == NULL)
+	errcode = hilbert_mset_init( &module->dependencies );
+	if ( errcode != 0 ) {
 		goto nodepmem;
+	}
 
-	module->reverse_dependencies = hilbert_mset_new();
-	if (module->reverse_dependencies == NULL)
+	errcode = hilbert_mset_init( &module->reverse_dependencies );
+	if ( errcode != 0 ) {
 		goto noreversedepmem;
+	}
 
 	return module;
 
 noreversedepmem:
-	hilbert_mset_del(module->dependencies);
+	hilbert_mset_fini( &module->dependencies );
 nodepmem:
-	hilbert_ivector_del(module->paramhandles);
+	hilbert_ivector_fini( &module->paramhandles );
 noparamhandlesmem:
-	hilbert_ivector_del(module->functorhandles);
+	hilbert_ivector_fini( &module->functorhandles );
 nofunctorhandlesmem:
-	hilbert_ivector_del(module->varhandles);
+	hilbert_ivector_fini( &module->varhandles );
 novarhandlesmem:
-	hilbert_ivector_del(module->kindhandles);
+	hilbert_ivector_fini( &module->kindhandles );
 nokindhandlesmem:
-	hilbert_ovector_del(module->objects);
+	hilbert_ovector_fini( &module->objects );
 noobjectmem:
 	mtx_destroy(&module->mutex);
 mutexfail:
@@ -116,17 +119,17 @@ void hilbert_module_free(struct HilbertModule * module) {
 
 	module->freeable = 1;
 
-	for ( void * i = hilbert_mset_iterator_start( module->dependencies ); i != NULL; i = hilbert_mset_iterator_next( module->dependencies, i ) ) {
-		struct HilbertModule * dependency = hilbert_mset_iterator_get( module->dependencies, i );
+	for ( void * i = hilbert_mset_iterator_start( &module->dependencies ); i != NULL; i = hilbert_mset_iterator_next( &module->dependencies, i ) ) {
+		struct HilbertModule * dependency = hilbert_mset_iterator_get( &module->dependencies, i );
 		rc = mtx_lock(&dependency->mutex);
 		assert (rc == thrd_success);
-		rc = hilbert_mset_remove(dependency->reverse_dependencies, module);
+		rc = hilbert_mset_remove( &dependency->reverse_dependencies, module );
 		assert (rc);
 		int freeable = dependency->freeable;
-		size_t count = hilbert_mset_count(dependency->reverse_dependencies);
+		size_t count = hilbert_mset_count( &dependency->reverse_dependencies );
 		rc = mtx_unlock(&dependency->mutex);
 		assert (rc == thrd_success);
-		hilbert_mset_remove(module->dependencies, dependency);
+		hilbert_mset_remove( &module->dependencies, dependency );
 		if (freeable && (count == 0)) {
 			/* dependency is freeable and its dependencies and reverse dependencies are empty.
 			 * Hence it can be freed definitely this time. */
@@ -135,21 +138,21 @@ void hilbert_module_free(struct HilbertModule * module) {
 	}
 
 	/* return if we still have reverse dependencies and leave final freeing to them */
-	size_t count = hilbert_mset_count(module->reverse_dependencies);
+	size_t count = hilbert_mset_count( &module->reverse_dependencies );
 	rc = mtx_unlock(&module->mutex);
 	assert (rc == thrd_success);
 	if (count != 0)
 		return;
 
 	/* free kind equivalence classes */
-	for ( void * i = hilbert_ivector_iterator_start( module->kindhandles ); i != NULL; i = hilbert_ivector_iterator_next( module->kindhandles, i ) ) {
-		union Object * object = hilbert_ovector_get(module->objects, hilbert_ivector_iterator_get( module->kindhandles, i ) );
+	for ( void * i = hilbert_ivector_iterator_start( &module->kindhandles ); i != NULL; i = hilbert_ivector_iterator_next( &module->kindhandles, i ) ) {
+		union Object * object = hilbert_ovector_get( &module->objects, hilbert_ivector_iterator_get( &module->kindhandles, i ) );
 		assert (object->generic.type & HILBERT_TYPE_KIND);
 		IndexSet * equivalence_class = object->kind.equivalence_class;
 		if (equivalence_class == NULL)
 			continue;
 		for ( void * j = hilbert_iset_iterator_start( equivalence_class ); j != NULL; j = hilbert_iset_iterator_next( equivalence_class, j ) ) {
-			union Object * object2 = hilbert_ovector_get(module->objects, hilbert_iset_iterator_get( equivalence_class, j ) );
+			union Object * object2 = hilbert_ovector_get( &module->objects, hilbert_iset_iterator_get( equivalence_class, j ) );
 			assert (object2->generic.type & HILBERT_TYPE_KIND);
 			object2->kind.equivalence_class = NULL;
 		}
@@ -157,18 +160,18 @@ void hilbert_module_free(struct HilbertModule * module) {
 	}
 
 	/* free objects */
-	for ( void * i = hilbert_ovector_iterator_start( module->objects ); i != NULL; i = hilbert_ovector_iterator_next( module->objects, i ) ) {
-		hilbert_object_free( hilbert_ovector_iterator_get( module->objects, i ) );
+	for ( void * i = hilbert_ovector_iterator_start( &module->objects ); i != NULL; i = hilbert_ovector_iterator_next( &module->objects, i ) ) {
+		hilbert_object_free( hilbert_ovector_iterator_get( &module->objects, i ) );
 	}
 
 	/* free other stuff */
-	hilbert_mset_del(module->reverse_dependencies);
-	hilbert_mset_del(module->dependencies);
-	hilbert_ivector_del(module->paramhandles);
-	hilbert_ivector_del(module->functorhandles);
-	hilbert_ivector_del(module->varhandles);
-	hilbert_ivector_del(module->kindhandles);
-	hilbert_ovector_del(module->objects);
+	hilbert_mset_fini( &module->reverse_dependencies );
+	hilbert_mset_fini( &module->dependencies );
+	hilbert_ivector_fini( &module->paramhandles );
+	hilbert_ivector_fini( &module->functorhandles );
+	hilbert_ivector_fini( &module->varhandles );
+	hilbert_ivector_fini( &module->kindhandles );
+	hilbert_ovector_fini( &module->objects );
 	mtx_destroy(&module->mutex);
 	free(module);
 }

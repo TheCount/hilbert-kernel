@@ -48,22 +48,23 @@ static int export_kinds(struct HilbertModule * restrict dest, struct HilbertModu
 		const HilbertHandle * restrict argv, HilbertMapperCallback mapper, void * userdata,
 		struct Param * restrict param) {
 	assert (dest != NULL);
-	assert ((hilbert_ivector_count(src->paramhandles) == 0) || (argv != NULL));
+	assert ( ( hilbert_ivector_count( &src->paramhandles ) == 0 ) || ( argv != NULL ) );
 	assert (mapper != NULL);
 	assert (param != NULL);
 	int errcode;
 
 	/* Create index set for already handled kinds in equivalence check */
-	IndexSet * already_handled = hilbert_iset_new();
-	if (already_handled == NULL) {
+	IndexSet already_handled;
+	errcode = hilbert_iset_init( &already_handled );
+	if ( errcode != 0 ) {
 		errcode = HILBERT_ERR_NOMEM;
 		goto noahmem;
 	}
 
 	/* Inspect all source kinds */
-	for ( void * i = hilbert_ivector_iterator_start( src->kindhandles ); i != NULL; i = hilbert_ivector_iterator_next( src->kindhandles, i ) ) {
-		HilbertHandle srckindhandle = hilbert_ivector_iterator_get( src->kindhandles, i );
-		union Object * srcobject = hilbert_ovector_get(src->objects, srckindhandle);
+	for ( void * i = hilbert_ivector_iterator_start( &src->kindhandles ); i != NULL; i = hilbert_ivector_iterator_next( &src->kindhandles, i ) ) {
+		HilbertHandle srckindhandle = hilbert_ivector_iterator_get( &src->kindhandles, i );
+		union Object * srcobject = hilbert_ovector_get( &src->objects, srckindhandle );
 		assert (srcobject->generic.type & HILBERT_TYPE_KIND);
 		HilbertHandle destkindhandle = mapper(dest, src, srckindhandle, userdata, &errcode);
 		if (errcode != 0)
@@ -82,39 +83,40 @@ static int export_kinds(struct HilbertModule * restrict dest, struct HilbertModu
 			struct ExternalKind * srckind = &srcobject->external_kind;
 			HilbertHandle arghandle = argv[srckind->paramindex];
 			struct ExternalKind * destkind = &destobject->external_kind;
-			HilbertHandle destparamhandle = hilbert_ivector_get(dest->paramhandles, destkind->paramindex);
+			HilbertHandle destparamhandle = hilbert_ivector_get( &dest->paramhandles, destkind->paramindex );
 			if (destparamhandle != arghandle) {
 				errcode = HILBERT_ERR_INVALID_MAPPING;
 				goto error;
 			}
 		}
-		const HilbertHandle * test = hilbert_pmap_post(param->handle_map, destkindhandle);
+		const HilbertHandle * test = hilbert_pmap_post( &param->handle_map, destkindhandle );
 		if (test != NULL) {
 			 errcode = HILBERT_ERR_MAPPING_CLASH;
 			 goto error;
 		}
-		if (hilbert_pmap_add(param->handle_map, destkindhandle, srckindhandle) != 0) {
+		if ( hilbert_pmap_add( &param->handle_map, destkindhandle, srckindhandle ) != 0 ) {
 			errcode = HILBERT_ERR_NOMEM;
 			goto error;
 		}
 	}
 
 	/* check equivalence classes */
-	for ( void * i = hilbert_ivector_iterator_start( src->kindhandles ); i != NULL; i = hilbert_ivector_iterator_next( src->kindhandles, i ) ) {
-		HilbertHandle srckindhandle = hilbert_ivector_iterator_get( src->kindhandles, i );
-		if (hilbert_iset_contains(already_handled, srckindhandle))
+	for ( void * i = hilbert_ivector_iterator_start( &src->kindhandles ); i != NULL; i = hilbert_ivector_iterator_next( &src->kindhandles, i ) ) {
+		HilbertHandle srckindhandle = hilbert_ivector_iterator_get( &src->kindhandles, i );
+		if ( hilbert_iset_contains( &already_handled, srckindhandle ) ) {
 			continue;
-		union Object * srcobject = hilbert_ovector_get(src->objects, srckindhandle);
+		}
+		union Object * srcobject = hilbert_ovector_get( &src->objects, srckindhandle );
 		assert (srcobject != NULL);
 		assert (srcobject->generic.type & HILBERT_TYPE_KIND);
 		struct Kind * srckind = &srcobject->kind;
 		if (srckind->equivalence_class == NULL)
 			continue;
-		const HilbertHandle * destkindhandle = hilbert_pmap_pre(param->handle_map, srckindhandle);
+		const HilbertHandle * destkindhandle = hilbert_pmap_pre( &param->handle_map, srckindhandle );
 		assert (destkindhandle != NULL);
 		for ( void * j = hilbert_iset_iterator_start( srckind->equivalence_class ); j != NULL; j = hilbert_iset_iterator_next( srckind->equivalence_class, j ) ) {
 			HilbertHandle srckindhandle2 = hilbert_iset_iterator_get( srckind->equivalence_class, j );
-			const HilbertHandle * destkindhandle2 = hilbert_pmap_pre(param->handle_map, srckindhandle2);
+			const HilbertHandle * destkindhandle2 = hilbert_pmap_pre( &param->handle_map, srckindhandle2 );
 			assert (destkindhandle2 != NULL);
 			int rc = hilbert_kind_isequivalent(dest, *destkindhandle, *destkindhandle2, &errcode);
 			assert (errcode == 0);
@@ -122,7 +124,7 @@ static int export_kinds(struct HilbertModule * restrict dest, struct HilbertModu
 				errcode = HILBERT_ERR_NO_EQUIVALENCE;
 				goto error;
 			}
-			if (hilbert_iset_add(already_handled, srckindhandle2) != 0) {
+			if ( hilbert_iset_add( &already_handled, srckindhandle2 ) != 0 ) {
 				errcode = HILBERT_ERR_NOMEM;
 				goto error;
 			}
@@ -132,7 +134,7 @@ static int export_kinds(struct HilbertModule * restrict dest, struct HilbertModu
 	errcode = 0;
 
 error:
-	hilbert_iset_del(already_handled);
+	hilbert_iset_fini( &already_handled );
 noahmem:
 	return errcode;
 }
@@ -153,7 +155,7 @@ noahmem:
 static int export_functors(struct HilbertModule * restrict dest, struct HilbertModule * restrict src, const HilbertHandle * restrict argv, HilbertMapperCallback mapper, void * userdata, struct Param * restrict param) {
 	assert (dest != NULL);
 	assert (src != NULL);
-	assert ((hilbert_ivector_count(src->paramhandles) == 0) || (argv != NULL));
+	assert ( ( hilbert_ivector_count( &src->paramhandles ) == 0 ) || ( argv != NULL ) );
 	assert (mapper != NULL);
 	assert (param != NULL);
 
@@ -161,9 +163,9 @@ static int export_functors(struct HilbertModule * restrict dest, struct HilbertM
 	int rc;
 
 	/* Inspect all source functors */
-	for ( void * i = hilbert_ivector_iterator_start( src->functorhandles ); i != NULL; i = hilbert_ivector_iterator_next( src->functorhandles, i ) ) {
-		HilbertHandle srcfunctorhandle = hilbert_ivector_iterator_get( src->functorhandles, i );
-		union Object * srcobject = hilbert_ovector_get(src->objects, srcfunctorhandle);
+	for ( void * i = hilbert_ivector_iterator_start( &src->functorhandles ); i != NULL; i = hilbert_ivector_iterator_next( &src->functorhandles, i ) ) {
+		HilbertHandle srcfunctorhandle = hilbert_ivector_iterator_get( &src->functorhandles, i );
+		union Object * srcobject = hilbert_ovector_get( &src->objects, srcfunctorhandle );
 		assert (srcobject->generic.type & HILBERT_TYPE_FUNCTOR); // FIXME: abbrev, def?
 		HilbertHandle destfunctorhandle = mapper(dest, src, srcfunctorhandle, userdata, &errcode);
 		if (errcode != 0)
@@ -182,7 +184,7 @@ static int export_functors(struct HilbertModule * restrict dest, struct HilbertM
 			struct ExternalBasicFunctor * srcfunctor = &srcobject->external_basic_functor;
 			HilbertHandle arghandle = argv[srcfunctor->paramindex];
 			struct ExternalBasicFunctor * destfunctor = &destobject->external_basic_functor;
-			HilbertHandle destparamhandle = hilbert_ivector_get(dest->paramhandles, destfunctor->paramindex);
+			HilbertHandle destparamhandle = hilbert_ivector_get( &dest->paramhandles, destfunctor->paramindex );
 			if (destparamhandle != arghandle) {
 				errcode = HILBERT_ERR_INVALID_MAPPING;
 				goto error;
@@ -191,7 +193,7 @@ static int export_functors(struct HilbertModule * restrict dest, struct HilbertM
 		/* check if functor data matches */
 		struct BasicFunctor * srcfunctor = &srcobject->basic_functor;
 		struct BasicFunctor * destfunctor = &destobject->basic_functor;
-		const HilbertHandle * kindp = hilbert_pmap_post(param->handle_map, destfunctor->result_kind);
+		const HilbertHandle * kindp = hilbert_pmap_post( &param->handle_map, destfunctor->result_kind );
 		assert (kindp != NULL);
 		rc = hilbert_kind_isequivalent(src, *kindp, srcfunctor->result_kind, &errcode);
 		assert (errcode == 0);
@@ -204,7 +206,7 @@ static int export_functors(struct HilbertModule * restrict dest, struct HilbertM
 			goto error;
 		}
 		for (size_t i = 0; i != destfunctor->place_count; ++i) {
-			kindp = hilbert_pmap_post(param->handle_map, destfunctor->input_kinds[i]);
+			kindp = hilbert_pmap_post( &param->handle_map, destfunctor->input_kinds[i] );
 			assert (kindp != NULL);
 			rc = hilbert_kind_isequivalent(src, *kindp, srcfunctor->input_kinds[i], &errcode);
 			assert (errcode == 0);
@@ -214,12 +216,12 @@ static int export_functors(struct HilbertModule * restrict dest, struct HilbertM
 			}
 		}
 		/* add mapping */
-		const HilbertHandle * test = hilbert_pmap_post(param->handle_map, destfunctorhandle);
+		const HilbertHandle * test = hilbert_pmap_post( &param->handle_map, destfunctorhandle );
 		if (test != NULL) {
 			errcode = HILBERT_ERR_MAPPING_CLASH;
 			goto error;
 		}
-		if (hilbert_pmap_add(param->handle_map, destfunctorhandle, srcfunctorhandle) != 0) {
+		if ( hilbert_pmap_add( &param->handle_map, destfunctorhandle, srcfunctorhandle ) != 0 ) {
 			errcode = HILBERT_ERR_NOMEM;
 			goto error;
 		}
@@ -270,7 +272,7 @@ HilbertHandle hilbert_module_export(struct HilbertModule * restrict dest, struct
 	if (*errcode != 0)
 		goto immutable;
 
-	if (hilbert_ivector_count(src->paramhandles) != argc) {
+	if ( hilbert_ivector_count( &src->paramhandles ) != argc ) {
 		*errcode = HILBERT_ERR_COUNT_MISMATCH;
 		goto argerror;
 	}
@@ -289,10 +291,10 @@ HilbertHandle hilbert_module_export(struct HilbertModule * restrict dest, struct
 		goto noparammem;
 	}
 
-	size_t oldcount = hilbert_ovector_count(dest->objects);
+	size_t oldcount = hilbert_ovector_count( &dest->objects );
 	result = oldcount;
 
-	if (hilbert_ovector_pushback(dest->objects, param) != 0) {
+	if ( hilbert_ovector_pushback( &dest->objects, param ) != 0 ) {
 		*errcode = HILBERT_ERR_NOMEM;
 		goto noobjectmem;
 	}
@@ -305,7 +307,7 @@ HilbertHandle hilbert_module_export(struct HilbertModule * restrict dest, struct
 		goto functorexporterror;
 	// FIXME: statements
 	
-	if (hilbert_ivector_pushback(dest->paramhandles, result) != 0) {
+	if ( hilbert_ivector_pushback( &dest->paramhandles, result ) != 0 ) {
 		*errcode = HILBERT_ERR_NOMEM;
 		goto noparamhandlemem;
 	}
@@ -320,11 +322,11 @@ deperror:
 noparamhandlemem:
 functorexporterror:
 kindexporterror:;
-		size_t newcount = hilbert_ovector_count(dest->objects);
+		size_t newcount = hilbert_ovector_count( &dest->objects );
 		for (size_t i = oldcount + 1; i < newcount; ++i) { /* param is freed below */
-			hilbert_object_free(hilbert_ovector_get(dest->objects, i));
+			hilbert_object_free( hilbert_ovector_get( &dest->objects, i ) );
 		}
-		if (hilbert_ovector_downsize(dest->objects, oldcount) != 0)
+		if ( hilbert_ovector_downsize( &dest->objects, oldcount ) != 0 )
 			*errcode = HILBERT_ERR_INTERNAL;
 noobjectmem:
 	hilbert_param_free(param);

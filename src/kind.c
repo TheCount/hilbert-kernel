@@ -67,19 +67,19 @@ static HilbertHandle kind_create_by_type(struct HilbertModule * restrict module,
 	}
 	object->kind = (struct Kind) { .type = type, .equivalence_class = NULL };
 
-	result = hilbert_ovector_count(module->objects);
+	result = hilbert_ovector_count( &module->objects );
 	if (result > HILBERT_HANDLE_MAX) {
 		*errcode = HILBERT_ERR_INTERNAL;
 		goto nohandle;
 	}
 
-	*errcode = hilbert_ovector_pushback(module->objects, object);
+	*errcode = hilbert_ovector_pushback( &module->objects, object );
 	if (*errcode != 0) {
 		*errcode = HILBERT_ERR_NOMEM;
 		goto noconsmem;
 	}
 
-	*errcode = hilbert_ivector_pushback(module->kindhandles, result);
+	*errcode = hilbert_ivector_pushback( &module->kindhandles, result );
 	if (*errcode != 0) {
 		*errcode = HILBERT_ERR_NOMEM;
 		goto nohandlemem;
@@ -88,7 +88,7 @@ static HilbertHandle kind_create_by_type(struct HilbertModule * restrict module,
 	goto success;
 
 nohandlemem:
-	hilbert_ovector_popback(module->objects);
+	hilbert_ovector_popback( &module->objects );
 noconsmem:
 nohandle:
 	free(object);
@@ -154,12 +154,12 @@ HilbertHandle hilbert_kind_alias(HilbertModule * restrict module, HilbertHandle 
 		}
 	}
 
-	result = hilbert_ovector_count(module->objects);
-	if (hilbert_ivector_pushback(module->kindhandles, result) != 0) {
+	result = hilbert_ovector_count( &module->objects );
+	if ( hilbert_ivector_pushback( &module->kindhandles, result ) != 0 ) {
 		*errcode = HILBERT_ERR_NOMEM;
 		goto nokindhandlemem;
 	}
-	if (hilbert_ovector_pushback(module->objects, newobject) != 0) {
+	if ( hilbert_ovector_pushback( &module->objects, newobject ) != 0 ) {
 		*errcode = HILBERT_ERR_NOMEM;
 		goto noobjectmem;
 	}
@@ -178,9 +178,9 @@ HilbertHandle hilbert_kind_alias(HilbertModule * restrict module, HilbertHandle 
 	goto success;
 
 noeqeltmem:
-	hilbert_ovector_popback(module->objects);
+	hilbert_ovector_popback( &module->objects );
 noobjectmem:
-	hilbert_ivector_popback(module->kindhandles);
+	hilbert_ivector_popback( &module->kindhandles );
 nokindhandlemem:
 	if (object->kind.equivalence_class == NULL)
 		hilbert_iset_del(equivalence_class);

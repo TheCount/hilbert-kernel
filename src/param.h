@@ -43,9 +43,12 @@ static inline union Object * param_create(struct HilbertModule * src) {
 	if (result == NULL)
 		goto noparammem;
 
-	result->param = (struct Param) { .type = HILBERT_TYPE_PARAM, .module = src, .handle_map = hilbert_pmap_new() };
-	if (result->param.handle_map == NULL)
+	result->param.type = HILBERT_TYPE_PARAM;
+	result->param.module = src;
+	int rc = hilbert_pmap_init( &result->param.handle_map );
+	if ( rc != 0 ) {
 		goto nomapmem;
+	}
 
 	return result;
 
@@ -72,15 +75,17 @@ static inline int set_dependency(struct HilbertModule * restrict dest, struct Hi
 	assert (src != NULL);
 	assert (dest != NULL);
 
-	int contains_dep  = hilbert_mset_contains(dest->dependencies, src);
-	int contains_rdep = hilbert_mset_contains(src->reverse_dependencies, dest);
+	int contains_dep  = hilbert_mset_contains( &dest->dependencies, src );
+	int contains_rdep = hilbert_mset_contains( &src->reverse_dependencies, dest );
 
-	if ((!contains_dep) && (hilbert_mset_add(dest->dependencies, src) != 0))
+	if ( ( !contains_dep ) && ( hilbert_mset_add( &dest->dependencies, src ) != 0 ) ) {
 		return HILBERT_ERR_NOMEM;
+	}
 
-	if ((!contains_rdep) && (hilbert_mset_add(src->reverse_dependencies, dest) != 0)) {
-		if (!contains_dep)
-			hilbert_mset_remove(dest->dependencies, src);
+	if ( ( !contains_rdep ) && ( hilbert_mset_add( &src->reverse_dependencies, dest ) != 0 ) ) {
+		if ( !contains_dep ) {
+			hilbert_mset_remove( &dest->dependencies, src );
+		}
 		return HILBERT_ERR_NOMEM;
 	}
 

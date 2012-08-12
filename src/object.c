@@ -43,7 +43,7 @@ HilbertHandle * hilbert_module_getobjects(struct HilbertModule * restrict module
 		goto nolock;
 	}
 
-	*size = hilbert_ovector_count(module->objects);
+	*size = hilbert_ovector_count( &module->objects );
 	result = malloc(*size * sizeof(*result));
 	if (result == NULL) {
 		*errcode = HILBERT_ERR_NOMEM;
@@ -110,7 +110,7 @@ HilbertHandle hilbert_object_getparam(struct HilbertModule * restrict module, Hi
 	}
 
 	if (object->generic.type & HILBERT_TYPE_KIND) {
-		result = hilbert_ivector_get(module->paramhandles, object->external_kind.paramindex);
+		result = hilbert_ivector_get( &module->paramhandles, object->external_kind.paramindex );
 	} else { // FIXME: functors, etc.
 		assert (0);
 	}
@@ -173,7 +173,7 @@ HilbertHandle hilbert_object_getsourcehandle(struct HilbertModule * restrict mod
 	union Object * object = hilbert_object_retrieve(module, param, HILBERT_TYPE_PARAM);
 	assert (object != NULL);
 
-	result = *hilbert_pmap_post(object->param.handle_map, handle);
+	result = *hilbert_pmap_post( &object->param.handle_map, handle );
 	*errcode = 0;
 
 	if (mtx_unlock(&module->mutex) != thrd_success)
@@ -202,7 +202,7 @@ HilbertHandle hilbert_object_getdesthandle(struct HilbertModule * restrict modul
 		goto noparam;
 	}
 
-	const HilbertHandle * resultp = hilbert_pmap_pre(param->param.handle_map, handle);
+	const HilbertHandle * resultp = hilbert_pmap_pre( &param->param.handle_map, handle );
 	if (resultp == NULL) {
 		*errcode = HILBERT_ERR_INVALID_HANDLE;
 		goto nohandle;

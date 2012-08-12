@@ -95,19 +95,19 @@ HilbertHandle hilbert_functor_create(struct HilbertModule * restrict module, Hil
 	}
 	memcpy(object->basic_functor.input_kinds, ikindhandles, ikindssize);
 
-	result = hilbert_ovector_count(module->objects);
+	result = hilbert_ovector_count( &module->objects );
 	if (result > HILBERT_HANDLE_MAX) {
 		*errcode = HILBERT_ERR_INTERNAL;
 		goto nohandle;
 	}
 
-	*errcode = hilbert_ovector_pushback(module->objects, object);
+	*errcode = hilbert_ovector_pushback( &module->objects, object );
 	if (*errcode != 0) {
 		*errcode = HILBERT_ERR_NOMEM;
 		goto noconsmem;
 	}
 
-	*errcode = hilbert_ivector_pushback(module->functorhandles, result);
+	*errcode = hilbert_ivector_pushback( &module->functorhandles, result );
 	if (*errcode != 0) {
 		*errcode = HILBERT_ERR_NOMEM;
 		goto nohandlemem;
@@ -116,7 +116,7 @@ HilbertHandle hilbert_functor_create(struct HilbertModule * restrict module, Hil
 	goto success;
 
 nohandlemem:
-	hilbert_ovector_popback(module->objects);
+	hilbert_ovector_popback( &module->objects );
 noconsmem:
 nohandle:
 	free(object->basic_functor.input_kinds);
