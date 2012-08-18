@@ -78,7 +78,8 @@ typedef struct HilbertExpression HilbertExpression;
  * @param userdata Pointer to user-defined data.
  * @param errcode Pointer to an integer used to convey a user-defined error code.
  *
- * @return On error, the return value is unspecified and a user-defined positive error code is stored in <code>*errcode</code>.
+ * @return On success, <code>0</code> is stored in <code>*errcode</code>, and the object handle in <code>dest</code> corresponding to the object handle <code>srcObject</code> is returned.
+ * 	On error, the return value is unspecified and a user-defined positive error code is stored in <code>*errcode</code>.
  * 	It is required that a positive value be stored in <code>*errcode</code> as the Hilbert kernel library uses negative integers for error codes.
  * 	On success, <code>0</code> is stored in <code>*errcode</code>, and the object handle in <code>dest</code> corresponding to the object handle <code>srcObject</code> is returned.
  */
@@ -271,11 +272,11 @@ int hilbert_module_makeimmutable(HilbertModule * module);
  * @param module Pointer to a <code>#HilbertModule</code> previously returned by a successful call to <code>#hilbert_module_create()</code>.
  * @param errcode Pointer to an integer used to convey an error code.
  *
- * @return On error, a negative value is stored in <code>*errcode</code> and the return value is unspecified.
- * 	On success, <code>0</code> is stored in <code>*errcode</code>, and the return value is as follows.
+ * @return On success, <code>0</code> is stored in <code>*errcode</code>, and the return value is as follows.
  * 	If the module is not of type <code>#HILBERT_INTERFACE_MODULE</code>, <code>0</code> is returned.
  * 	Otherwise, a non-zero value is returned
  * 	if and only if a previous call to <code>hilbert_module_makeimmutable()</code> with the module was successful.
+ * 	On error, a negative value is stored in <code>*errcode</code> and the return value is unspecified.
  *
  * @sa hilbert_module_makeimmutable()
  * @sa hilbert_module_gettype()
@@ -407,14 +408,14 @@ int hilbert_kind_identify(HilbertModule * module, HilbertHandle kind1, HilbertHa
  * @param kind2 Kind handle of a kind in <code>module</code>.
  * @param errcode Pointer to an integer to convey an error code.
  *
- * @return On error, the return value is unspeified and a negative value is stored in <code>*errcode</code>,
- * 	which may be one of the following error codes:
- * 		- <code>#HILBERT_ERR_INVALID_HANDLE</code>:
- * 			At least one of <code>kind1</code> and <code>kind2</code> is not a valid kind handle.
- * 	On success, <code>0</code> is stored in <code>*errcode</code> and the return value is as follows.
+ * @return On success, <code>0</code> is stored in <code>*errcode</code> and the return value is as follows.
  * 	If the two kinds signified by <code>kind1</code> and <code>kind2</code> are equivalent,
  * 	a non-zero value is returned.
  * 	Otherwise, <code>0</code> is returned.
+ * 	On error, the return value is unspecified and a negative value is stored in <code>*errcode</code>,
+ * 	which may be one of the following error codes:
+ * 		- <code>#HILBERT_ERR_INVALID_HANDLE</code>:
+ * 			At least one of <code>kind1</code> and <code>kind2</code> is not a valid kind handle.
  */
 int hilbert_kind_isequivalent(HilbertModule * restrict module, HilbertHandle kind1, HilbertHandle kind2,
 		int * restrict errcode);
@@ -429,16 +430,16 @@ int hilbert_kind_isequivalent(HilbertModule * restrict module, HilbertHandle kin
  * @param count Pointer to a <code>size_t</code> to convey the number of elements in the equivalence class.
  * @param errcode Pointer to an integer to convey an error code.
  *
- * @return On error, <code>NULL</code> is returned, the value of <code>*count</code> is unspecified,
+ * @return On success, a pointer to the first element of an array of kind handles representing the equivalence class
+ * 	is returned. The array has no specific order and contains <code>kind</code>. The number of elements in the
+ * 	array is stored in <code>*count</code>. Zero is stored in <code>*errcode</code>.
+ * 	The returned array must be freed by the caller with #hilbert_harray_free().
+ * 	On error, <code>NULL</code> is returned, the value of <code>*count</code> is unspecified,
  * 	and a negative value is stored in <code>*errcode</code>, which may be one of the following error codes:
  * 		- <code>#HILBERT_ERR_NOMEM</code>:
  * 			There was not enough memory available to create a copy of the equivalence class.
  * 		- <code>#HILBERT_ERR_INVALID_HANDLE</code>:
  * 			<code>kind</code> is not a valid handle for a kind.
- * 	On success, a pointer to the first element of an array of kind handles representing the equivalence class
- * 	is returned. The array has no specific order and contains <code>kind</code>. The number of elements in the
- * 	array is stored in <code>*count</code>. Zero is stored in <code>*errcode</code>.
- * 	The returned array must be freed by the caller with #hilbert_harray_free().
  *
  * @sa hilbert_harray_free()
  */
@@ -460,7 +461,8 @@ void hilbert_harray_free(HilbertHandle * handle_array);
  * @param kind Kind handle.
  * @param errcode Pointer to an integer to convey an error code.
  *
- * @return On error, the return value is unspecified, and a negative value is stored in <code>*errcode</code>,
+ * @return On success, <code>0</code> is stored in <code>*errcode</code>, and a handle for the new variable is returned.
+ * 	On error, the return value is unspecified, and a negative value is stored in <code>*errcode</code>,
  * 	which may be one of the following error codes:
  * 		- <code>#HILBERT_ERR_NOMEM</code>:
  * 			There was not enough memory available to create the new variable.
@@ -468,7 +470,6 @@ void hilbert_harray_free(HilbertHandle * handle_array);
  * 			<code>kind</code> is not a valid kind handle.
  * 		- <code>#HILBERT_ERR_IMMUTABLE</code>:
  * 			The specified module is immutable.
- * 	On success, <code>0</code> is stored in <code>*errcode</code>, and a handle for the new variable is returned.
  *
  * @sa #hilbert_module_isimmutable()
  */
@@ -481,11 +482,11 @@ HilbertHandle hilbert_var_create(HilbertModule * restrict module, HilbertHandle 
  * @param var Variable handle.
  * @param errcode Pointer to an integer to convey an error code.
  *
- * @return On error, the return value is unspecified, and a negative value is stored in <code>errcode</code>,
+ * @return On success, <code>0</code> is stored in <code>*errcode</code>, and a handle for the kind of the variable (or an equivalent kind) is returned.
+ * 	On error, the return value is unspecified, and a negative value is stored in <code>errcode</code>,
  * 	which may be one of the following error codes:
  * 		- <code>#HILBERT_ERR_INVALID_HANDLE</code>:
  * 			<code>var</code> is not a valid variable handle for <code>module</code>.
- * 	On success, <code>0</code> is stored in <code>*errcode</code>, and a handle for the kind of the variable (or an equivalent kind) is returned.
  */
 HilbertHandle hilbert_var_getkind(HilbertModule * restrict module, HilbertHandle var, int * restrict errcode);
 
@@ -499,7 +500,8 @@ HilbertHandle hilbert_var_getkind(HilbertModule * restrict module, HilbertHandle
  * 	The corresponding kinds are the input kinds to the functor.
  * @param errcode Pointer to an integer to convey an error code.
  *
- * @return On error, the return value is unspecified, and a negative value is stored in <code>*errcode</code>,
+ * @return On success, <code>0</code> is stored in <code>*errcode</code> and a handle for the new functor is returned.
+ * 	On error, the return value is unspecified, and a negative value is stored in <code>*errcode</code>,
  * 	which may be one of the following error codes:
  * 		- <code>#HILBERT_ERR_NOMEM</code>:
  * 			There was not enough memory available to create the new functor.
@@ -509,7 +511,6 @@ HilbertHandle hilbert_var_getkind(HilbertModule * restrict module, HilbertHandle
  * 			The module pointed to by <code>module</code> is immutable.
  * 		- <code>#HILBERT_ERR_INVALID_HANDLE</code>:
  * 			<code>rkind</code> is not a non-variable kind handle, or one of the elements in the array pointed to by <code>ikinds</code> is not a kind handle.
- * 	On success, <code>0</code> is stored in <code>*errcode</code> and a handle for the new functor is returned.
  */
 HilbertHandle hilbert_functor_create(HilbertModule * restrict module, HilbertHandle rkind, size_t count, const HilbertHandle * restrict ikinds, int * restrict errcode);
 
@@ -520,11 +521,11 @@ HilbertHandle hilbert_functor_create(HilbertModule * restrict module, HilbertHan
  * @param functor Functor handle.
  * @param errcode Pointer to an integer to convey an error code.
  *
- * @return On error, the return value is unspecified, and a negative value is stored in <code>*errcode</code>,
+ * @return On success, <code>0</code> is stored in <code>*errcode</code> and a handle for the result kind is returned.
+ * 	On error, the return value is unspecified, and a negative value is stored in <code>*errcode</code>,
  * 	which may be one of the following error codes:
  * 		- <code>#HILBERT_ERR_INVALID_HANDLE</code>:
  * 			<code>functor</code> is not a functor handle in <code>module</code>.
- * 	On success, <code>0</code> is stored in <code>*errcode</code> and a handle for the result kind is returned.
  */
 HilbertHandle hilbert_functor_getkind(HilbertModule * restrict module, HilbertHandle functor, int * restrict errcode);
 
@@ -536,15 +537,15 @@ HilbertHandle hilbert_functor_getkind(HilbertModule * restrict module, HilbertHa
  * @param size Pointer to a location where the place count of the functor can be stored.
  * @param errcode Pointer to an integer to convey an error code.
  *
- * @return On error, the <code>*size</code> and the return value are unspecified, and a negative value is stored in <code>*errcode</code>,
+ * @return On success, <code>0</code> is stored in <code>*errcode</code>, the place count of the functor is stored in <code>*size</code>,
+ * 	and a pointer to an array of size <code>*size</code> containing the input kind handles in proper order is returned.
+ * 	The returned array should be freed by the user once it is no longer needed.
+ * 	On error, the <code>*size</code> and the return value are unspecified, and a negative value is stored in <code>*errcode</code>,
  * 	which may be one of the following error codes:
  * 		- <code>#HILBERT_ERR_NOMEM</code>:
  * 			There was not enough memory available to complete the request.
  * 		- <code>#HILBERT_ERR_INVALID_HANDLE</code>:
  * 			<code>functor</code> is not a functor handle in <code>module</code>.
- * 	On success, <code>0</code> is stored in <code>*errcode</code>, the place count of the functor is stored in <code>*size</code>,
- * 	and a pointer to an array of size <code>*size</code> containing the input kind handles in proper order is returned.
- * 	The returned array should be freed by the user once it is no longer needed.
  *
  * @sa #hilbert_harray_free()
  */
@@ -560,7 +561,9 @@ HilbertHandle * hilbert_functor_getinputkinds(HilbertModule * restrict module, H
  * 	If <code>count</code> is zero, this argument may be <code>NULL</code>.
  * @param errcode Pointer to an integer to convey an error code.
  *
- * @return On error, the return value is unspecified, and a negative value is stored in <code>*errcode</code>,
+ * @return On success, <code>0</code> is stored in <code>*errcode</code>, and a pointer to a new, finished Hilbert expression is returned. If <code>head</code> is a variable handle, it consists solely of that variable.
+ * 	Otherwise, its head functor is <code>head</code> and its subexpressions are given by the expressions in the array pointed to by <code>subexpr</code>.
+ * 	On error, the return value is unspecified, and a negative value is stored in <code>*errcode</code>,
  * 	which may be one of the following error codes:
  * 		- <code>#HILBERT_ERR_NOMEM</code>:
  * 			There was not enough memory available to create the expression.
@@ -574,8 +577,6 @@ HilbertHandle * hilbert_functor_getinputkinds(HilbertModule * restrict module, H
  * 			One of the expressions in the array pointed to by <code>subexpr</code> is not a finished expression.
  * 		- <code>#HILBERT_ERR_NO_EQUIVALENCE</code>:
  * 			The kind of one of the expressions in the array pointed to by <code>subexpr</code> is not equivalent to the corresponding input kind of <code>head</code>.
- * 	On success, <code>0</code> is stored in <code>*errcode</code>, and a pointer to a new, finished Hilbert expression is returned. If <code>head</code> is a variable handle, it consists solely of that variable.
- * 	Otherwise, its head functor is <code>head</code> and its subexpressions are given by the expressions in the array pointed to by <code>subexpr</code>.
  *
  * @sa #hilbert_expression_free()
  */
@@ -587,11 +588,11 @@ HilbertExpression * hilbert_expression_create(HilbertModule * restrict module, H
  * @param module Pointer to the Hilbert module on which the expression should be based.
  * @param errcode Pointer to an integer to convey an error code.
  *
- * @return On error, the return value is unspecified, and a negative value is stored on <code>*errcode</code>,
+ * @return On success, <code>0</code> is stored in <code>*errcode</code>, and a pointer to a new, unfinished Hilbert expression of length zero is returned.
+ * 	On error, the return value is unspecified, and a negative value is stored on <code>*errcode</code>,
  * 	which may be one of the following error codes:
  * 		- <code>#HILBERT_ERR_NOMEM</code>:
  * 			There was not enough memory available to start the expression.
- * 	On success, <code>0</code> is stored in <code>*errcode</code>, and a pointer to a new, unfinished Hilbert expression of length zero is returned.
  *
  * @sa #hilbert_expression_free()
  */
@@ -605,7 +606,8 @@ HilbertExpression * hilbert_expression_start(HilbertModule * restrict module, in
  * @param handle Variable or functor handle to be added to the expression. The handle must be from the module <code>expr</code> is based on.
  * @param errcode Pointer to an integer to convey an error code.
  *
- * @return On error, the return value is unspecified, and a negative value is stored on <code>*errcode</code>,
+ * @return On success, <code>0</code> is stored in <code>*errcode</code>, and the type of <code>expr</code> after adding the handle is returned (i.e., whether the expression in now finished).
+ * 	On error, the return value is unspecified, and a negative value is stored on <code>*errcode</code>,
  * 	which may be one of the following error codes:
  * 		- <code>#HILBERT_ERR_NOMEM</code>:
  * 			There was not enough memory available to add the handle.
@@ -615,7 +617,6 @@ HilbertExpression * hilbert_expression_start(HilbertModule * restrict module, in
  * 			<code>handle</code> is not a variable handle or a functor handle in the module <code>expr</code> is based on.
  * 		- <code>#HILBERT_ERR_NO_EQUIVALENCE</code>:
  * 			The kind of <code>handle</code> is not equivalent to the corresponding input kind.
- * 	On success, <code>0</code> is stored in <code>*errcode</code>, and the type of <code>expr</code> after adding the handle is returned (i.e., whether the expression in now finished).
  */
 enum HilbertExpressionType hilbert_expression_add(HilbertExpression * restrict expr, HilbertHandle handle, int * restrict errcode);
 
@@ -628,7 +629,9 @@ enum HilbertExpressionType hilbert_expression_add(HilbertExpression * restrict e
  * 	The handles are expected in forward Polish order.
  * @param errcode Pointer to an integer to convey an error code.
  *
- * @return On error, the return value is unspecified and a negative value is stored in <code>*errcode</code>,
+ * @return On success, <code>0</code> is stored in <code>*errcode</code>, and a pointer to a new Hilbert expression with forward Polish representation as in the array pointed to by <code>handles</code> is returned.
+ * 	The new expression is not necessarily finished.
+ * 	On error, the return value is unspecified and a negative value is stored in <code>*errcode</code>,
  * 	which may be one of the following error codes:
  * 		- <code>#HILBERT_ERR_NOMEM</code>:
  * 			There was not enough memory available to create the expression.
@@ -638,8 +641,6 @@ enum HilbertExpressionType hilbert_expression_add(HilbertExpression * restrict e
  * 			The kind of one of the handles in the array pointed to by <code>handles</code> is not equivalent to the corresponding input kind.
  * 		- <code>#HILBERT_ERR_INVALID_EXPR</code>:
  * 			There are excess handles after the expression is finished.
- * 	On success, <code>0</code> is stored in <code>*errcode</code>, and a pointer to a new Hilbert expression with forward Polish representation as in the array pointed to by <code>handles</code> is returned.
- * 	The new expression is not necessarily finished.
  *
  * @sa #hilbert_expression_free()
  * @sa #hilbert_expression_toarray()
@@ -653,8 +654,8 @@ HilbertExpression * hilbert_expression_fromarray(HilbertModule * restrict module
  * @param expr Pointer to a Hilbert expression.
  * @param errcode Pointer to an integer to convey an error code.
  *
- * @return On error, the return value is unspecified, and a negative value is stored in <code>*errcode</code>.
- * 	On success, <code>0</code> is stored in <code>*errcode</code>, and the expression type (finished or unfinished) is returned.
+ * @return On success, <code>0</code> is stored in <code>*errcode</code>, and the expression type (finished or unfinished) is returned.
+ * 	On error, the return value is unspecified, and a negative value is stored in <code>*errcode</code>.
  */
 enum HilbertExpressionType hilbert_expression_gettype(HilbertExpression * restrict expr, int * restrict errcode);
 
@@ -675,12 +676,12 @@ HilbertModule * hilbert_expression_getmodule(HilbertExpression * expr);
  * @param expr Pointer to a Hilbert expression.
  * @param errcode Pointer to an integer to convey an error code.
  *
- * @return On error, the return value is unspecified, and a negative value is stored in <code>*errcode</code>,
+ * @return On success, <code>0</code> is stored in <code>*errcode</code>, and a kind handle representing the kind of the specified expression is returned.
+ * 	The module in which the returned handle is defined is the module the expression is based on.
+ * 	On error, the return value is unspecified, and a negative value is stored in <code>*errcode</code>,
  * 	which may be one of the following error codes:
  * 		- <code>#HILBERT_ERR_INVALID_EXPR</code>:
  * 			The expression pointed to by <code>expr</code> is not finished.
- * 	On success, <code>0</code> is stored in <code>*errcode</code>, and a kind handle representing the kind of the specified expression is returned.
- * 	The module in which the returned handle is defined is the module the expression is based on.
  */
 HilbertHandle hilbert_expression_getkind(HilbertExpression * restrict expr, int * restrict errcode);
 
@@ -692,15 +693,15 @@ HilbertHandle hilbert_expression_getkind(HilbertExpression * restrict expr, int 
  * @param count Pointer to a <code>size_t</code> to convey the number of subexpressions.
  * @param errcode Pointer to an integer to convey an error code.
  *
- * @return On error, the return value and <code>*count</code> are unspecified, and a negative value is stored in <code>*errcode</code>,
+ * @return On success, <code>0</code> is stored in <code>*errcode</code>, and a pointer to an array of pointers to Hilbert expressions, the subexpressions of the head of the expression pointed to by <code>expr</code>, is returned,
+ * 	the size of which is stored in <code>*count</code>. If <code>*count</code> is zero, the returned value may be <code>NULL</code>. If the head of the expression pointed to by <code>expr</code> is a variable,
+ * 	then <code>*count</code> is always zero, otherwise <code>*count</code> equals the place count of the head functor.
+ * 	On error, the return value and <code>*count</code> are unspecified, and a negative value is stored in <code>*errcode</code>,
  * 	which may be one of the following error codes:
  * 		- <code>#HILBERT_ERR_NOMEM</code>:
  * 			There was not enough memory available to complete the request.
  * 		- <code>#HILBERT_ERR_INVALID_EXPR</code>:
  * 			The expression pointed to by <code>expr</code> is not finished.
- * 	On success, <code>0</code> is stored in <code>*errcode</code>, and a pointer to an array of pointers to Hilbert expressions, the subexpressions of the head of the expression pointed to by <code>expr</code>, is returned,
- * 	the size of which is stored in <code>*count</code>. If <code>*count</code> is zero, the returned value may be <code>NULL</code>. If the head of the expression pointed to by <code>expr</code> is a variable,
- * 	then <code>*count</code> is always zero, otherwise <code>*count</code> equals the place count of the head functor.
  *
  * @sa #hilbert_earray_free()
  */
@@ -721,8 +722,8 @@ void hilbert_earray_free(size_t count, HilbertExpression ** expressions);
  * @param expr Pointer to a Hilbert expression.
  * @param errcode Pointer to an integer to convey an error code.
  *
- * @return On error, the return value is unspecified, and a negative value is stored in <code>*errcode</code>.
- * 	On success, <code>0</code> is stored in <code>*errcode</code>, and the length of the specified expression is returned. Note that if the expression is still unfinished, subsequent calls may return larger values.
+ * @return On success, <code>0</code> is stored in <code>*errcode</code>, and the length of the specified expression is returned. Note that if the expression is still unfinished, subsequent calls may return larger values.
+ * 	On error, the return value is unspecified, and a negative value is stored in <code>*errcode</code>.
  */
 size_t hilbert_expression_getlength(HilbertExpression * restrict expr, int * restrict errcode);
 
@@ -734,11 +735,11 @@ size_t hilbert_expression_getlength(HilbertExpression * restrict expr, int * res
  * @param length Pointer to a <code>size_t</code> to convey the number of elements in the returned array.
  * @param errcode Pointer to an integer to convey an error code.
  *
- * @return On error, the return value and <code>*length</code> are unspecified, and a negative value is stored in <code>*errcode</code>,
+ * @return On success, <code>0</code> is stored in <code>*errcode</code>, and a pointer to an array of Hilbert handles representing the expression is returned. The length of the array is stored in <code>*length</code>.
+ * 	On error, the return value and <code>*length</code> are unspecified, and a negative value is stored in <code>*errcode</code>,
  * 	which may be one of the following error codes:
  * 		- <code>#HILBERT_ERR_NOMEM</code>:
  * 			There was not enough memory available to perform the request.
- * 	On success, <code>0</code> is stored in <code>*errcode</code>, and a pointer to an array of Hilbert handles representing the expression is returned. The length of the array is stored in <code>*length</code>.
  *
  * @sa #hilbert_harray_free()
  * @sa #hilbert_expression_fromarray()
@@ -753,11 +754,11 @@ HilbertHandle * hilbert_expression_toarray(HilbertExpression * restrict expr, si
  * @param count Pointer to a <code>size_t</code> to store the number of variables.
  * @param errcode Pointer to an integer to convey an error code.
  *
- * @return On error, the return value and <code>*count</code> are unspecified, and a negative value is stored in <code>*errcode</code>,
+ * @return On success, <code>0</code> is stored in <code>*errcode</code>, and a pointer to an array of Hilbert handles representing the occurring variables is returned. The length of the array is stored in <code>*length</code>.
+ * 	On error, the return value and <code>*count</code> are unspecified, and a negative value is stored in <code>*errcode</code>,
  * 	which may be one of the following error codes:
  * 		- <code>#HILBERT_ERR_NOMEM</code>:
  * 			There was not enough memory available to perform the request.
- * 	On success, <code>0</code> is stored in <code>*errcode</code>, and a pointer to an array of Hilbert handles representing the occurring variables is returned. The length of the array is stored in <code>*length</code>.
  *
  * @sa #hilbert_harray_free()
  */
@@ -773,7 +774,8 @@ HilbertHandle * hilbert_expression_variables(HilbertExpression * restrict expr, 
  * 	If <code>count</code> is zero, this may be <code>NULL</code>.
  * @param errcode Pointer to an integer to convey an error code.
  *
- * @return On error, the return value is unspecified, and a negative value is stored in <code>*errcode</code>,
+ * @return On success, <code>0</code> is stored in <code>*errcode</code>, and a pointer to a new expression with the specified substitutions is returned.
+ * 	On error, the return value is unspecified, and a negative value is stored in <code>*errcode</code>,
  * 	which may be one of the following error codes:
  * 		- <code>#HILBERT_ERR_NOMEM</code>:
  * 			There was not enough memory available to perform the request.
@@ -785,7 +787,6 @@ HilbertHandle * hilbert_expression_variables(HilbertExpression * restrict expr, 
  * 			One of the expressions in <code>substitutions</code> is unfinished.
  * 		- <code>#HILBERT_ERR_NO_EQUIVALENCE</code>:
  * 			The kind of one of the expressions in <code>substitutions</code> is not equivalent to the kind of the variable it is to be substituted for.
- * 	On success, <code>0</code> is stored in <code>*errcode</code>, and a pointer to a new expression with the specified substitutions is returned.
  *
  * @sa #hilbert_expression_free()
  */
@@ -818,7 +819,8 @@ void hilbert_expression_free(HilbertExpression * expr);
  * @param userdata Pointer to user-defined data. It is passed as an argument to the userdata parameter of <code>mapper</code>, and is otherwise ignored.
  * @param errcode Pointer to an integer to convey an error code.
  *
- * @return On error, the return value is unspecified,
+ * @return On success, <code>0</code> is stored in <code>*errcode</code>, and a handle for the new parameter is returned.
+ * 	On error, the return value is unspecified,
  * 	and a nonzero value is stored in <code>*errcode</code>. A positive value is a user-defined error code indicating an error which has occurred within <code>mapper</code>.
  * 	Otherwise, the value is negative and may be one of the following error codes:
  * 		- <code>#HILBERT_ERR_NOMEM</code>:
@@ -836,7 +838,6 @@ void hilbert_expression_free(HilbertExpression * expr);
  * 			The <code>mapper</code> callback function returned an invalid object handle.
  * 		- <code>#HILBERT_ERR_MAPPING_CLASH</code>:
  * 			The <code>mapper</code> callback function returned the same object handle for different source objects.
- * 	On success, <code>0</code> is stored in <code>*errcode</code>, and a handle for the new parameter is returned.
  */
 HilbertHandle hilbert_module_param(HilbertModule * restrict dest, HilbertModule * restrict src, size_t argc, const HilbertHandle * restrict argv, HilbertMapperCallback mapper, void * userdata, int * restrict errcode);
 
@@ -854,7 +855,8 @@ HilbertHandle hilbert_module_param(HilbertModule * restrict dest, HilbertModule 
  * @param userdata Pointer to user-defined data. It is passed as an argument to the userdata parameter of <code>mapper</code>, and is otherwise ignored.
  * @param errcode Pointer to an integer to convey an error code.
  *
- * @return On error, the return value is unspecified
+ * @return On success, <code>0</code> is stored in <code>*errcode</code>, and a handle for the new parameter is returned.
+ * 	On error, the return value is unspecified
  * 	and a nonzero value is stored in <code>*errcode</code>. A positive value is a user-defined error code indicating an error which has occurred within <code>mapper</code>.
  * 	Otherwise, the value is negative and may be one of the following error codes:
  * 		- <code>#HILBERT_ERR_NOMEM</code>:
@@ -872,7 +874,6 @@ HilbertHandle hilbert_module_param(HilbertModule * restrict dest, HilbertModule 
  * 			The <code>mapper</code> callback function returned an invalid object handle.
  * 		- <code>#HILBERT_ERR_MAPPING_CLASH</code>:
  * 			The <code>mapper</code> callback function returned the same object handle for different source objects.
- * 	On success, <code>0</code> is stored in <code>*errcode</code>, and a handle for the new parameter is returned.
  */
 HilbertHandle hilbert_module_import(HilbertModule * restrict dest, HilbertModule * restrict src, size_t argc, const HilbertHandle * restrict argv, HilbertMapperCallback mapper, void * userdata, int * restrict errcode);
 
@@ -893,7 +894,8 @@ HilbertHandle hilbert_module_import(HilbertModule * restrict dest, HilbertModule
  * 	It is passed as an argument to the userdata parameter of <code>mapper</code>, and is otherwise ignored.
  * @param errcode Pointer to an integer to convey an error code.
  *
- * @return On error, the return value is unspecified and a nonzero value is stored in <code>*errcode</code>.
+ * @return On success, <code>0</code> is stored in <code>*errcode</code>, and a handle for the new parameter is returned.
+ * 	On error, the return value is unspecified and a nonzero value is stored in <code>*errcode</code>.
  * 	A positive value is a user-defined error code indicating an error which has occurred within <code>mapper</code>.
  * 	Otherwise, the value is negative and may be one of the following error codes:
  * 		- <code>#HILBERT_ERR_NOMEM</code>:
@@ -916,8 +918,6 @@ HilbertHandle hilbert_module_import(HilbertModule * restrict dest, HilbertModule
  * 		- <code>#HILBERT_ERR_NO_EQUIVALENCE</code>:
  * 			The <code>mapper</code> callback function mapped two equivalent kinds from the module pointed
  * 			to by <code>src</code> to two inequivalent kinds in the module pointed to by <code>dest</code>.
- *
- * 	On success, <code>0</code> is stored in <code>*errcode</code>, and a handle for the new parameter is returned.
  */
 HilbertHandle hilbert_module_export(HilbertModule * restrict dest, HilbertModule * restrict src, size_t argc,
 		const HilbertHandle * restrict argv, HilbertMapperCallback mapper, void * userdata,
@@ -930,11 +930,7 @@ HilbertHandle hilbert_module_export(HilbertModule * restrict dest, HilbertModule
  * @param size Pointer to a location where the size of the returned array can be stored.
  * @param errcode Pointer to a location where an integer error code can be stored.
  *
- * @return On error, a negative value is stored in <code>*errcode</code> and <code>*size</code> and
- * 	the return value is unspecified. <code>*errcode</code> may be one of the following error codes:
- * 		- <code>#HILBERT_ERR_NOMEM</code>:
- * 			There was not enough memory available to perform the request.
- * 	On success, <code>0</code> is stored in <code>*errcode</code>,
+ * @return On success, <code>0</code> is stored in <code>*errcode</code>,
  * 	and a pointer to an array of Hilbert handles whose size is stored in <code>*size</code> is returned.
  * 	The handles in the returned array correspond to the Hilbert objects in the module pointed to by
  * 	<code>module</code>. The handles are stored in the order in which they were created. If several handles were
@@ -942,6 +938,10 @@ HilbertHandle hilbert_module_export(HilbertModule * restrict dest, HilbertModule
  * 	respect to the other handles, but among themselves, the order is unspecified.
  * 	The returned array only corresponds to the current state of the module.
  * 	It can be freed with <code>#hilbert_harray_free()</code>.
+ * 	On error, a negative value is stored in <code>*errcode</code> and <code>*size</code> and
+ * 	the return value is unspecified. <code>*errcode</code> may be one of the following error codes:
+ * 		- <code>#HILBERT_ERR_NOMEM</code>:
+ * 			There was not enough memory available to perform the request.
  *
  * @sa #hilbert_harray_free()
  */
@@ -954,11 +954,7 @@ HilbertHandle * hilbert_module_getobjects(HilbertModule * restrict module, size_
  * @param object Object handle of an object in <code>module</code>.
  * @param errcode Pointer to a location where an integer error code can be stored.
  *
- * @return On error, a negative value is stored in <code>*errcode</code> and the return value is unspecified.
- * 	<code>*errcode</code> may be one of the following error codes:
- * 		- <code>#HILBERT_ERR_INVALID_HANDLE</code>:
- * 			<code>object</code> is not a valid object handle for <code>module</code>.
- * 	On success, <code>0</code> is stored in <code>*errcode</code>,
+ * @return On success, <code>0</code> is stored in <code>*errcode</code>,
  * 	and a bitwise OR of one or more of the following flags is returned:
  * 		- <code>#HILBERT_TYPE_KIND</code>:
  * 			The object specified by <code>object</code> is a kind.
@@ -969,6 +965,10 @@ HilbertHandle * hilbert_module_getobjects(HilbertModule * restrict module, size_
  * 		- <code>#HILBERT_TYPE_EXTERNAL</code>:
  * 			The object specified by <code>object</code> was created through a parameterisation, an import,
  * 			or an export.
+ * 	On error, a negative value is stored in <code>*errcode</code> and the return value is unspecified.
+ * 	<code>*errcode</code> may be one of the following error codes:
+ * 		- <code>#HILBERT_ERR_INVALID_HANDLE</code>:
+ * 			<code>object</code> is not a valid object handle for <code>module</code>.
  */
 unsigned int hilbert_object_gettype(HilbertModule * restrict module, HilbertHandle object, int * restrict errcode);
 
@@ -979,13 +979,13 @@ unsigned int hilbert_object_gettype(HilbertModule * restrict module, HilbertHand
  * @param object Object handle of an object in <code>module</code>.
  * @param errcode Pointer to a location where an integer error code can be stored.
  *
- * @return On error, a negative value is stored in <code>*errcode</code> and the return value is unspecified.
+ * @return On success, <code>0</code> is stored in <code>*errcode</code>,
+ * 	and the parameter handle through which the object corresponding to <code>object</code> was created is returned.
+ * 	On error, a negative value is stored in <code>*errcode</code> and the return value is unspecified.
  * 	<code>*errcode</code> may be one of the following error codes:
  * 		- <code>#HILBERT_ERR_INVALID_HANDLE</code>:
  * 			<code>object</code> is not a valid object handle for the module pointed to by <code>module</code>,
  * 			or the object is not an external object.
- * 	On success, <code>0</code> is stored in <code>*errcode</code>,
- * 	and the parameter handle through which the object corresponding to <code>object</code> was created is returned.
  */
 HilbertHandle hilbert_object_getparam(HilbertModule * restrict module, HilbertHandle object, int * restrict errcode);
 
@@ -997,13 +997,13 @@ HilbertHandle hilbert_object_getparam(HilbertModule * restrict module, HilbertHa
  * @param object Object handle of an object in the module pointed to by <code>module</code>.
  * @param errcode Pointer to a location where an integer error code can be stored.
  *
- * @return On error, a negative value is stored in <code>*errcode</code> and the return value is unspecified.
+ * @return On success, <code>0</code> is stored in <code>*errcode</code>,
+ * 	and a pointer to the source module of the object is returned.
+ * 	On error, a negative value is stored in <code>*errcode</code> and the return value is unspecified.
  * 	<code>*errcode</code> may be one of the following error codes:
  * 		- <code>#HILBERT_ERR_INVALID_HANDLE</code>:
  * 			<code>object</code> is not a valid object handle for the module pointed to by <code>module</code>,
  * 			or the object is not an external object.
- * 	On success, <code>0</code> is stored in <code>*errcode</code>,
- * 	and a pointer to the source module of the object is returned.
  */
 HilbertModule * hilbert_object_getsource(HilbertModule * restrict module, HilbertHandle object, int * restrict errcode);
 
@@ -1015,13 +1015,13 @@ HilbertModule * hilbert_object_getsource(HilbertModule * restrict module, Hilber
  * @param object Object handle of an object in the module pointed to by <code>module</code>.
  * @param errcode Pointer to a location where an integer error code can be stored.
  *
- * @return On error, a negative value is stored in <code>*errcode</code> and the return value is unspecified.
+ * @return On success, <code>0</code> is stored in <code>*errcode</code>,
+ * 	and the handle in the source module is returned.
+ * 	On error, a negative value is stored in <code>*errcode</code> and the return value is unspecified.
  * 	<code>*errcode</code> may be one of the following error codes:
  * 		- <code>#HILBERT_ERR_INVALID_HANDLE</code>:
  * 			<code>object</code> is not a valid object handle for the module pointed to by <code>module</code>,
  * 			or the object is not an external object.
- * 	On success, <code>0</code> is stored in <code>*errcode</code>,
- * 	and the handle in the source module is returned.
  *
  * @sa #hilbert_object_getsource()
  */
@@ -1037,14 +1037,14 @@ HilbertHandle hilbert_object_getsourcehandle(HilbertModule * restrict module, Hi
  * @param object Object handle of an object in the source module.
  * @param errcode Pointer to a location where an integer error code can be stored.
  *
- * @return On error, a negative value is stored in <code>*errcode</code> and the return value is unspecified.
+ * @return On success, <code>0</code> is stored in <code>*errcode</code>,
+ * 	and the handle in the destination module is returned.
+ * 	On error, a negative value is stored in <code>*errcode</code> and the return value is unspecified.
  * 	<code>*errcode</code> may be one of the following error codes:
  * 		- <code>#HILBERT_ERR_INVALID_HANDLE</code>:
  * 			<code>param</code> is not a valid parameter handle in the destination module,
  * 			<code>object</code> is not a valid object handle in the source module,
  * 			or the object has no destination in the module pointed to by <code>module</code>.
- * 	On success, <code>0</code> is stored in <code>*errcode</code>,
- * 	and the handle in the destination module is returned.
  */
 HilbertHandle hilbert_object_getdesthandle(HilbertModule * restrict module, HilbertHandle param, HilbertHandle object,
 		int * restrict errcode);
