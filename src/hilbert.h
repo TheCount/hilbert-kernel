@@ -100,7 +100,7 @@ typedef struct HilbertExpression HilbertExpression;
 typedef HilbertHandle (*HilbertMapperCallback)(HilbertModule * restrict dest, HilbertModule * restrict src, HilbertHandle srcObject, void * userdata, int * restrict errcode);
 
 /**
- * Error codes.
+ * @name Error codes.
  *
  * Most Hilbert kernel library functions convey error conditions in the form of error codes.
  * Library error codes are negative integers. A value of zero indicates no error.
@@ -110,6 +110,8 @@ typedef HilbertHandle (*HilbertMapperCallback)(HilbertModule * restrict dest, Hi
  * listed below. The allowed error codes are listed in the description of each function. One exception to this rule
  * is the special error code <code>#HILBERT_ERR_INTERNAL</code>, which may be provided by all library functions
  * conveying errors without being mentioned explicitly.
+ *
+ * @{
  */
 
 /**
@@ -171,12 +173,16 @@ typedef HilbertHandle (*HilbertMapperCallback)(HilbertModule * restrict dest, Hi
  */
 #define HILBERT_ERR_INTERNAL       (-99)
 
+/** @} */ // end of error code group
+
 /**
- * Object type flags.
+ * @name Object type flags.
  *
  * Each object in a Hilbert module has a set of logically OR'd type flags.
  *
  * @sa #hilbert_object_gettype()
+ *
+ * @{
  */
 
 /**
@@ -219,6 +225,8 @@ typedef HilbertHandle (*HilbertMapperCallback)(HilbertModule * restrict dest, Hi
  * This flag is mutually exclusive with <code>#HILBERT_TYPE_KIND</code>, <code>#HILBERT_TYPE_PARAM</code>, <code>#HILBERT_TYPE_VAR</code> and <code>#HILBERT_TYPE_VKIND</code>.
  */
 #define HILBERT_TYPE_FUNCTOR  0x0020u
+
+/** @} */ // end of object type flag group
 
 /**
  * Creates a new Hilbert module.
