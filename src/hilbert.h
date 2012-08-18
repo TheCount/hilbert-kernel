@@ -34,7 +34,14 @@
  * Hilbert module types.
  */
 enum HilbertModuleType {
+	/**
+	 * Identifier for interface modules.
+	 */
 	HILBERT_INTERFACE_MODULE,
+
+	/**
+	 * Identifier for proof modules.
+	 */
 	HILBERT_PROOF_MODULE
 };
 
@@ -54,7 +61,14 @@ typedef size_t HilbertHandle;
  * Hilbert expression types.
  */
 enum HilbertExpressionType {
+	/**
+	 * Identifier for a finished expression.
+	 */
 	HILBERT_FINISHED_EXPRESSION,
+
+	/**
+	 * Identifier for an unfinished expression.
+	 */
 	HILBERT_UNFINISHED_EXPRESSION
 };
 
