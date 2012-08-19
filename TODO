@@ -1,1 +1,2 @@
 * Should we accept kind mapping clashs on param/import/export when the clashing kinds are equivalent?
+* Doxygen accepts @return more than once, e.gDoxygen accepts @return more than once, e.g. for success and error returns.
