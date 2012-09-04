@@ -305,8 +305,8 @@ static int add_variable_to_expression(struct HilbertExpression * expr, HilbertHa
 		goto nomem;
 	}
 
-	rc = hilbert_ivector_downsize(expr->kindstack, kssize);
-	assert (rc == 0);
+	errcode = hilbert_ivector_downsize(expr->kindstack, kssize);
+	assert (errcode == 0);
 
 nomem:
 noeq:
