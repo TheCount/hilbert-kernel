@@ -21,7 +21,8 @@
  */
 
 /**
- * Test to check expression creation from array.
+ * Test to check expression creation from array
+ * and array creation from expression.
  */
 
 #include<assert.h>
@@ -129,6 +130,40 @@ int main( void ) {
 	type = hilbert_expression_gettype( expr, &errcode );
 	assert( errcode == 0 );
 	assert( type == HILBERT_FINISHED_EXPRESSION );
+	hilbert_expression_free( expr );
+
+	/* Back conversion */
+	expr = hilbert_expression_start( module, &errcode );
+	assert( errcode == 0 );
+	size_t length;
+	HilbertHandle * harray = hilbert_expression_toarray( expr, &length, &errcode );
+	assert( errcode == 0 );
+	assert( length == 0 );
+	hilbert_harray_free( harray );
+	hilbert_expression_add( expr, f, &errcode );
+	assert( errcode == 0 );
+	harray = hilbert_expression_toarray( expr, &length, &errcode );
+	assert( errcode == 0 );
+	assert( length == 1 );
+	assert( harray != NULL );
+	assert( harray[0] == f );
+	hilbert_harray_free( harray );
+	hilbert_expression_add( expr, cf, &errcode );
+	assert( errcode == 0 );
+	harray = hilbert_expression_toarray( expr, &length, &errcode );
+	assert( errcode == 0 );
+	assert( length == 2 );
+	assert( harray != NULL );
+	assert( ( harray[0] == f ) && ( harray[1] == cf ) );
+	hilbert_harray_free( harray );
+	hilbert_expression_add( expr, v2, &errcode );
+	assert( errcode == 0 );
+	harray = hilbert_expression_toarray( expr, &length, &errcode );
+	assert( errcode == 0 );
+	assert( length == 3 );
+	assert( harray != NULL );
+	assert( ( harray[0] == f ) && ( harray[1] == cf ) && ( harray[2] == v2 ) );
+	hilbert_harray_free( harray );
 	hilbert_expression_free( expr );
 
 	/* Cleanup */
