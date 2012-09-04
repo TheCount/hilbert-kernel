@@ -358,7 +358,7 @@ int main(void) {
 	}
 	HilbertHandle * eqc = hilbert_kind_equivalenceclass(src, skinds[0], &count, &errcode);
 	if (errcode != 0) {
-		fprintf(stderr, "Unable to obtain equivalence class of kind0 in src (errcode=%d)\n", stderr);
+		fprintf(stderr, "Unable to obtain equivalence class of kind0 in src (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
 	if (count != 1) {
@@ -368,7 +368,7 @@ int main(void) {
 	hilbert_harray_free(eqc);
 	eqc = hilbert_kind_equivalenceclass(src, skinds[1], &count, &errcode);
 	if (errcode != 0) {
-		fprintf(stderr, "Unable to obtain equivalence class of kind1 in src (errcode=%d)\n", stderr);
+		fprintf(stderr, "Unable to obtain equivalence class of kind1 in src (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
 	if (count != 2) {
@@ -378,7 +378,7 @@ int main(void) {
 	hilbert_harray_free(eqc);
 	eqc = hilbert_kind_equivalenceclass(src, skinds[3], &count, &errcode);
 	if (errcode != 0) {
-		fprintf(stderr, "Unable to obtain equivalence class of kind3 in src (errcode=%d)\n", stderr);
+		fprintf(stderr, "Unable to obtain equivalence class of kind3 in src (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
 	if (count != 1) {
@@ -388,7 +388,7 @@ int main(void) {
 	hilbert_harray_free(eqc);
 	eqc = hilbert_kind_equivalenceclass(src, skinds[4], &count, &errcode);
 	if (errcode != 0) {
-		fprintf(stderr, "Unable to obtain equivalence class of kind4 in src (errcode=%d)\n", stderr);
+		fprintf(stderr, "Unable to obtain equivalence class of kind4 in src (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
 	if (count != 1) {
@@ -398,7 +398,7 @@ int main(void) {
 	hilbert_harray_free(eqc);
 	eqc = hilbert_kind_equivalenceclass(src, skinds[5], &count, &errcode);
 	if (errcode != 0) {
-		fprintf(stderr, "Unable to obtain equivalence class of kind5 in src (errcode=%d)\n", stderr);
+		fprintf(stderr, "Unable to obtain equivalence class of kind5 in src (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
 	if (count != 1) {
@@ -408,7 +408,7 @@ int main(void) {
 	hilbert_harray_free(eqc);
 	eqc = hilbert_kind_equivalenceclass(src, skinds[6], &count, &errcode);
 	if (errcode != 0) {
-		fprintf(stderr, "Unable to obtain equivalence class of kind6 in src (errcode=%d)\n", stderr);
+		fprintf(stderr, "Unable to obtain equivalence class of kind6 in src (errcode=%d)\n", errcode);
 		exit(EXIT_FAILURE);
 	}
 	if (count != 2) {
