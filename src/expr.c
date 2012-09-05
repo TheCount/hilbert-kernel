@@ -620,6 +620,7 @@ struct HilbertExpression ** hilbert_expression_subexpressions(struct HilbertExpr
 			hilbert_expression_free(subexpr);
 			goto nosubexprmem;
 		}
+		i = hilbert_ivector_iterator_next( &expr->handles, i );
 	}
 
 	*count = hilbert_evector_count( &evector );
