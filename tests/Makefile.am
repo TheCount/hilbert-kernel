@@ -25,7 +25,7 @@ TESTNAMES = module immutable ancillary \
 	    var_create var_getkind \
 	    functor_create functor_getkind functor_getinputkinds \
 	    objecttype param import export getobjects object_getparam object_getsource object_getsourcehandle object_getdesthandle \
-	    expr_create expr_build expr_array expr_get expr_sub
+	    expr_create expr_build expr_array expr_get expr_subexpr
 check_PROGRAMS = $(TESTNAMES)
 AM_CFLAGS = -I../src/
 AM_LDFLAGS = -L../src/ -lhilbert
