@@ -776,7 +776,7 @@ HilbertHandle * hilbert_expression_toarray(HilbertExpression * restrict expr, si
  * @param count Pointer to a <code>size_t</code> to store the number of variables.
  * @param errcode Pointer to an integer to convey an error code.
  *
- * @return On success, <code>0</code> is stored in <code>*errcode</code>, and a pointer to an array of Hilbert handles representing the occurring variables is returned. The length of the array is stored in <code>*length</code>.<br />
+ * @return On success, <code>0</code> is stored in <code>*errcode</code>, and a pointer to an array of Hilbert handles representing the occurring variables is returned. The length of the array is stored in <code>*count</code>.<br />
  * 	On error, the return value and <code>*count</code> are unspecified, and a negative value is stored in <code>*errcode</code>,
  * 	which may be one of the following error codes:
  * 		- <code>#HILBERT_ERR_NOMEM</code>:
