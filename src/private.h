@@ -153,6 +153,47 @@ struct ExternalBasicFunctor {
 };
 
 /**
+ * Abbreviation.
+ */
+struct Abbreviation {
+	/**
+	 * Abbreviation type (#HILBERT_TYPE_FUNCTOR | #HILBERT_TYPE_ABBREV, possibly #HILBERT_TYPE_EXTERNAL)
+	 */
+	unsigned int type;
+
+	/**
+	 * Result kind (kind of the defining expression).
+	 */
+	HilbertHandle result_kind;
+
+	/**
+	 * Place count of abbreviation.
+	 */
+	size_t place_count;
+
+	/**
+	 * Input kinds (kinds of the abbreviation variables).
+	 */
+	HilbertHandle * input_kinds;
+
+	/**
+	 * For external abbreviations, the index into <code>#struct HilbertModule::paramhandles</code>.
+	 * Otherwise, the value is unspecified.
+	 */
+	size_t paramindex;
+
+	/**
+	 * Variables.
+	 */
+	HilbertHandle * vars;
+
+	/**
+	 * Defining expression.
+	 */
+	struct HilbertExpression * expr;
+};
+
+/**
  * Parameter.
  */
 struct Param {
@@ -182,6 +223,7 @@ union Object {
 	struct Variable var;
 	struct BasicFunctor basic_functor;
 	struct ExternalBasicFunctor external_basic_functor;
+	struct Abbreviation abbreviation;
 	struct Param param;
 };
 
@@ -215,6 +257,18 @@ static inline void hilbert_functor_free(union Object * functor) {
 }
 
 /**
+ * Frees an abbreviation.
+ *
+ * @param abbrev Pointer to a previously allocated abbreviation.
+ */
+static inline void hilbert_abbrev_free( union Object * abbrev ) {
+	free( abbrev->abbreviation.input_kinds );
+	free( abbrev->abbreviation.vars );
+	hilbert_expression_free( abbrev->abbreviation.expr );
+	free( abbrev );
+}
+
+/**
  * Frees a parameter.
  *
  * @param param Pointer to a previously allocated parameter.
@@ -245,6 +299,9 @@ static inline void hilbert_object_free(union Object * object) {
 		case HILBERT_TYPE_FUNCTOR:
 		case HILBERT_TYPE_FUNCTOR | HILBERT_TYPE_EXTERNAL:
 			hilbert_functor_free(object);
+			break;
+		case HILBERT_TYPE_FUNCTOR | HILBERT_TYPE_ABBREV:
+			hilbert_abbrev_free( object );
 			break;
 		case HILBERT_TYPE_PARAM:
 			hilbert_param_free(object);

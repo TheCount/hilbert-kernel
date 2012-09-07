@@ -226,6 +226,12 @@ typedef HilbertHandle (*HilbertMapperCallback)(HilbertModule * restrict dest, Hi
  */
 #define HILBERT_TYPE_FUNCTOR  0x0020u
 
+/**
+ * Flag to indicate that the corresponding object is an abbreviation.
+ * This flag can only occur together with <code>#HILBERT_TYPE_FUNCTOR</code>.
+ */
+#define HILBERT_TYPE_ABBREV   0x0040u
+
 /** @} */ // end of object type flag group
 
 /**
@@ -826,6 +832,45 @@ HilbertExpression * hilbert_expression_substitute(HilbertExpression * restrict s
  * @param expr Pointer to a previously created Hilbert expression.
  */
 void hilbert_expression_free(HilbertExpression * expr);
+
+/**
+ * Creates an abbreviation.
+ * An abbreviation is a special kind of functor which can be transparently replaced by its definiens.
+ * In order to remain sound, it is necessary that the variables of the abbreviation match exactly the variables of the defining expression.
+ * As a courtesy, in proof modules, the defined abbreviation may lack some of the variables in the defining expression.
+ * When a transparent replacement takes place, the missing variables will be substituted with their corresponding expressions of length one.
+ *
+ * @param module Pointer to the module in which the abbreviation is to be defined.
+ * @param count Number of variables the abbreviation depends on.
+ * @param vars Pointer to an array of handles of length <code>count</code> containing the variables the abbreviation depends on.
+ * 	If <code>count == 0</code>, this may be <code>NULL</code>.
+ * @param expr Pointer to the defining expression of the abbreviation.
+ * @param errcode Pointer to an integer to convey an error code.
+ *
+ * @return On success, <code>0</code> is stored in <code>*errcode</code>, and a new handle for the newly created abbreviation is returned.
+ * 	The handle is a functor handle whose result kind is the kind of the expression pointed to by <code>expr</code> and whose input
+ * 	kinds are the kinds of the variables in the array pointed to by <code>vars</code>.<br />
+ * 	On error, the return value is unspecified, and a negative value is stored in <code>*errcode</code>,
+ * 	which may be one of the following error codes:
+ * 		- <code>#HILBERT_ERR_NOMEM</code>:
+ * 			There was not enough memory available to create the abbreviation.
+ * 		- <code>#HILBERT_ERR_INVALID_MODULE</code>:
+ * 			The module of the expression pointed to by <code>expr</code> is not the module pointed to by <code>module</code>.
+ * 		- <code>#HILBERT_ERR_IMMUTABLE</code>:
+ * 			The module pointed to by <code>module</code> is immutable.
+ * 		- <code>#HILBERT_ERR_COUNT_MISMATCH</code>:
+ * 			The module pointed to by <code>module</code> is an interface module and <code>count</code> does not equal the
+ * 			the number of variables in the expression pointed to by <code>expr</code>, or otherwise, the module pointed to by
+ * 			<code>module</code> is a proof module and <code>count</code> is greater than the number of variables in the
+ * 			expression pointed to by <code>expr</code>.
+ * 		- <code>#HILBERT_ERR_INVALID_HANDLE</code>:
+ * 			One of the handles in the array pointed to by <code>vars</code> is not a variable handle, or is the handle of a
+ * 			variable not appearing in the expression pointed to by <code>expr</code>.
+ * 		- <code>#HILBERT_ERR_INVALID_EXPR</code>:
+ * 			The expression pointed to by <code>expr</code> is not finished.
+ */
+HilbertHandle hilbert_abbrev_create( HilbertModule * restrict module, size_t count, const HilbertHandle * restrict vars,
+		HilbertExpression * restrict expr, int * restrict errcode );
 
 /**
  * Parameterises a Hilbert interface module with another Hilbert interface module.
